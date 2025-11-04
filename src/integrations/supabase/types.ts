@@ -14,7 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bombonas: {
+        Row: {
+          capacity: number
+          color: string | null
+          created_at: string | null
+          current_product: string | null
+          id: string
+          last_wash_date: string | null
+          location_address: string | null
+          location_lat: number | null
+          location_lng: number | null
+          material: string
+          name: string
+          owner_id: string | null
+          qr_code: string
+          status: string | null
+          total_cycles: number | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          capacity: number
+          color?: string | null
+          created_at?: string | null
+          current_product?: string | null
+          id?: string
+          last_wash_date?: string | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          material: string
+          name: string
+          owner_id?: string | null
+          qr_code: string
+          status?: string | null
+          total_cycles?: number | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          capacity?: number
+          color?: string | null
+          created_at?: string | null
+          current_product?: string | null
+          id?: string
+          last_wash_date?: string | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          material?: string
+          name?: string
+          owner_id?: string | null
+          qr_code?: string
+          status?: string | null
+          total_cycles?: number | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bombonas_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string
+          compatible_materials: string[] | null
+          created_at: string | null
+          danger_level: string | null
+          id: string
+          name: string
+          requires_certification: boolean | null
+          subcategory: string | null
+        }
+        Insert: {
+          category: string
+          compatible_materials?: string[] | null
+          created_at?: string | null
+          danger_level?: string | null
+          id?: string
+          name: string
+          requires_certification?: boolean | null
+          subcategory?: string | null
+        }
+        Update: {
+          category?: string
+          compatible_materials?: string[] | null
+          created_at?: string | null
+          danger_level?: string | null
+          id?: string
+          name?: string
+          requires_certification?: boolean | null
+          subcategory?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tracking_history: {
+        Row: {
+          bombona_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          location_address: string | null
+          location_lat: number | null
+          location_lng: number | null
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          bombona_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          status: string
+        }
+        Update: {
+          bombona_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_history_bombona_id_fkey"
+            columns: ["bombona_id"]
+            isOneToOne: false
+            referencedRelation: "bombonas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracking_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

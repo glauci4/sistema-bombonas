@@ -1,11 +1,35 @@
+import { useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import MetricCard from "@/components/MetricCard";
 import AssetOverview from "@/components/AssetOverview";
-import { Package, Recycle, TrendingUp, Leaf, Droplet, Factory } from "lucide-react";
+import { Package, Recycle, TrendingUp, Leaf, Droplet, Factory, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 const Index = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

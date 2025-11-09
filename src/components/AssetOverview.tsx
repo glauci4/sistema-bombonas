@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,8 @@ const statusConfig = {
 };
 
 const AssetOverview = () => {
+  const navigate = useNavigate();
+  
   return (
     <Card className="shadow-card-eco border-border">
       <div className="p-6">
@@ -79,7 +82,10 @@ const AssetOverview = () => {
             <h2 className="text-2xl font-bold text-foreground">Visão Geral de Ativos</h2>
             <p className="text-muted-foreground mt-1">Bombonas ativas no sistema</p>
           </div>
-          <Button className="bg-gradient-eco text-primary-foreground shadow-eco hover:opacity-90">
+          <Button 
+            className="bg-gradient-eco text-primary-foreground shadow-eco hover:opacity-90"
+            onClick={() => navigate('/bombonas')}
+          >
             <Package className="w-4 h-4 mr-2" />
             Novo Ativo
           </Button>
@@ -132,7 +138,15 @@ const AssetOverview = () => {
                       </div>
                     </div>
 
-                    <Button variant="ghost" size="sm" className="shrink-0">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/bombonas/details/${asset.id}`);
+                      }}
+                    >
                       Detalhes
                     </Button>
                   </div>
@@ -143,7 +157,11 @@ const AssetOverview = () => {
         </div>
 
         <div className="mt-6 text-center">
-          <Button variant="outline" className="border-primary text-primary hover:bg-primary/5">
+          <Button 
+            variant="outline" 
+            className="border-primary text-primary hover:bg-primary/5"
+            onClick={() => navigate('/all-assets')}
+          >
             Ver Todos os Ativos ({mockAssets.length * 250}+)
           </Button>
         </div>

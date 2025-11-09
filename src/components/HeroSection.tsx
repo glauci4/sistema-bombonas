@@ -1,8 +1,11 @@
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Leaf, Package, BarChart3 } from "lucide-react";
 import heroBackground from "@/assets/hero-background.jpg";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+  
   return (
     <section className="relative min-h-[500px] overflow-hidden rounded-2xl my-8 shadow-eco">
       {/* Background Image with Overlay */}
@@ -36,11 +39,20 @@ const HeroSection = () => {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-glow">
+            <Button 
+              size="lg" 
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-glow"
+              onClick={() => navigate('/bombonas')}
+            >
               Começar Agora
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              onClick={() => navigate('/demo')}
+            >
               Ver Demo
             </Button>
           </div>

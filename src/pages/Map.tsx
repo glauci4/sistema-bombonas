@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import InteractiveMap from '@/components/InteractiveMap';
 
 interface BombonaLocation {
   id: string;
@@ -71,17 +72,7 @@ const Map = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <Card className="shadow-card-eco h-[600px]">
-              <CardContent className="p-0 h-full flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center p-8">
-                  <MapPin className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">Mapa interativo em desenvolvimento</p>
-                  <p className="text-sm text-muted-foreground">
-                    Aqui será exibido um mapa com a localização em tempo real de todas as bombonas
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <InteractiveMap locations={bombonas} />
           </div>
 
           <div className="space-y-4">

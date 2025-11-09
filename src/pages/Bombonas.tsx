@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Package, MapPin } from 'lucide-react';
+import { Plus, Search, Package, MapPin, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import QRCode from 'qrcode';
 
 interface Bombona {
   id: string;
@@ -30,6 +31,7 @@ const Bombonas = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   
   const [newBombona, setNewBombona] = useState({
     name: '',
@@ -61,6 +63,38 @@ const Bombonas = () => {
     }
   };
 
+  const generateQRCode = async (text: string) => {
+    if (!text.trim()) {
+      toast.error('Digite um código QR primeiro');
+      return;
+    }
+    try {
+      const url = await QRCode.toDataURL(text, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#22c55e',
+          light: '#ffffff'
+        }
+      });
+      setQrCodeUrl(url);
+      toast.success('QR Code gerado!');
+    } catch (error) {
+      console.error('Erro ao gerar QR Code:', error);
+      toast.error('Erro ao gerar QR Code');
+    }
+  };
+
+  const downloadQRCode = () => {
+    if (qrCodeUrl) {
+      const link = document.createElement('a');
+      link.download = `qrcode-${newBombona.qr_code}.png`;
+      link.href = qrCodeUrl;
+      link.click();
+      toast.success('QR Code baixado!');
+    }
+  };
+
   const handleCreateBombona = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -88,6 +122,7 @@ const Bombonas = () => {
         color: '',
         status: 'available'
       });
+      setQrCodeUrl('');
       fetchBombonas();
     } catch (error: any) {
       toast.error(error.message || 'Erro ao cadastrar bombona');
@@ -157,13 +192,36 @@ const Bombonas = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="qr_code">Código QR</Label>
-                  <Input
-                    id="qr_code"
-                    value={newBombona.qr_code}
-                    onChange={(e) => setNewBombona({...newBombona, qr_code: e.target.value})}
-                    placeholder="Ex: QR-2024-001"
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="qr_code"
+                      value={newBombona.qr_code}
+                      onChange={(e) => setNewBombona({...newBombona, qr_code: e.target.value})}
+                      placeholder="Ex: QR-2024-001"
+                      required
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={() => generateQRCode(newBombona.qr_code)}
+                      disabled={!newBombona.qr_code}
+                    >
+                      Gerar QR
+                    </Button>
+                  </div>
+                  {qrCodeUrl && (
+                    <div className="mt-4 p-4 border rounded-lg bg-muted/20">
+                      <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48 mx-auto" />
+                      <Button 
+                        type="button" 
+                        onClick={downloadQRCode}
+                        className="w-full mt-2"
+                        variant="outline"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Baixar QR Code
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

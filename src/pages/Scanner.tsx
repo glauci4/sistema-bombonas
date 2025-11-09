@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QrCode, Camera, Search } from 'lucide-react';
+import { QrCode, Camera, Search, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Html5Qrcode } from 'html5-qrcode';
 
 interface BombonaInfo {
   id: string;
@@ -25,9 +26,64 @@ const Scanner = () => {
   const [qrCode, setQrCode] = useState('');
   const [bombona, setBombona] = useState<BombonaInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  const handleSearch = async () => {
-    if (!qrCode.trim()) {
+  useEffect(() => {
+    return () => {
+      stopScanning();
+    };
+  }, []);
+
+  const startScanning = async () => {
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length > 0) {
+        const scanner = new Html5Qrcode("qr-reader");
+        scannerRef.current = scanner;
+        
+        await scanner.start(
+          devices[0].id,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          (decodedText) => {
+            setQrCode(decodedText);
+            handleSearch(decodedText);
+            stopScanning();
+          },
+          () => {
+            // Ignore scanning errors
+          }
+        );
+        setScanning(true);
+        toast.success('Câmera ativada!');
+      } else {
+        toast.error('Nenhuma câmera encontrada');
+      }
+    } catch (error) {
+      console.error('Erro ao iniciar scanner:', error);
+      toast.error('Erro ao acessar câmera');
+    }
+  };
+
+  const stopScanning = async () => {
+    if (scannerRef.current && scanning) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+        scannerRef.current = null;
+        setScanning(false);
+      } catch (error) {
+        console.error('Erro ao parar scanner:', error);
+      }
+    }
+  };
+
+  const handleSearch = async (code?: string) => {
+    const searchCode = code || qrCode;
+    if (!searchCode.trim()) {
       toast.error('Digite um código QR');
       return;
     }
@@ -37,19 +93,22 @@ const Scanner = () => {
       const { data, error } = await supabase
         .from('bombonas')
         .select('*')
-        .eq('qr_code', qrCode)
-        .single();
+        .eq('qr_code', searchCode.trim())
+        .maybeSingle();
 
-      if (error || !data) {
+      if (error) throw error;
+
+      if (data) {
+        setBombona(data);
+        toast.success('Bombona encontrada!');
+      } else {
         toast.error('Bombona não encontrada');
         setBombona(null);
-        return;
       }
-
-      setBombona(data);
-      toast.success('Bombona encontrada!');
     } catch (error) {
+      console.error('Erro ao buscar bombona:', error);
       toast.error('Erro ao buscar bombona');
+      setBombona(null);
     } finally {
       setLoading(false);
     }
@@ -105,7 +164,7 @@ const Scanner = () => {
                     onChange={(e) => setQrCode(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   />
-                  <Button onClick={handleSearch} disabled={loading}>
+                  <Button onClick={() => handleSearch()} disabled={loading}>
                     <Search className="w-4 h-4 mr-2" />
                     Buscar
                   </Button>
@@ -121,12 +180,35 @@ const Scanner = () => {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full" disabled>
-                <Camera className="w-4 h-4 mr-2" />
-                Escanear com Câmera (Em breve)
-              </Button>
+              {!scanning ? (
+                <Button 
+                  className="w-full" 
+                  onClick={startScanning}
+                  variant="outline"
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  Escanear com Câmera
+                </Button>
+              ) : (
+                <Button 
+                  className="w-full" 
+                  onClick={stopScanning}
+                  variant="destructive"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Parar Scanner
+                </Button>
+              )}
             </CardContent>
           </Card>
+
+          {scanning && (
+            <Card className="shadow-card-eco">
+              <CardContent className="p-0">
+                <div id="qr-reader" className="w-full rounded-lg overflow-hidden"></div>
+              </CardContent>
+            </Card>
+          )}
 
           {bombona && (
             <Card className="shadow-card-eco animate-slide-up">

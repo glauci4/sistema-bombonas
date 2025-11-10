@@ -43,7 +43,7 @@ const Auth = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-eco shadow-eco mb-4">
             <Leaf className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">EcoTrack</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">BonnaTech</h1>
           <p className="text-muted-foreground">Sistema de Rastreamento Sustentável</p>
         </div>
 

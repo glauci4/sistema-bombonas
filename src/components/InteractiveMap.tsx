@@ -1,11 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+
+// CSS do Leaflet
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Corrigir ícones do Leaflet (problema comum em React)
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface MapLocation {
   id: string;
@@ -22,125 +29,119 @@ interface InteractiveMapProps {
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({ locations }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [tokenSaved, setTokenSaved] = useState(false);
+  const map = useRef<L.Map | null>(null);
+  const markers = useRef<L.Marker[]>([]);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('mapbox_token');
-    if (savedToken) {
-      setMapboxToken(savedToken);
-      setTokenSaved(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mapContainer.current || !tokenSaved || !mapboxToken) return;
-
-    mapboxgl.accessToken = mapboxToken;
+    if (!mapContainer.current) return;
 
     try {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [-46.6333, -23.5505], // São Paulo default
-        zoom: 10,
-      });
+      // Inicializa o mapa com OpenStreetMap
+      map.current = L.map(mapContainer.current).setView([-23.5505, -46.6333], 10);
 
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      // Adiciona camada do OpenStreetMap (SEMPRE gratuita)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }).addTo(map.current);
 
-      // Add markers for each location
-      locations.forEach((location) => {
-        if (location.location_lat && location.location_lng) {
-          const statusColors: Record<string, string> = {
-            available: '#22c55e',
-            in_use: '#3b82f6',
-            maintenance: '#ef4444',
-            washing: '#f59e0b'
-          };
+      // Adiciona controles de zoom
+      L.control.zoom({ position: 'topright' }).addTo(map.current);
 
-          const color = statusColors[location.status] || '#6b7280';
+      // Adiciona marcadores
+      addMarkersToMap();
 
-          const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-            `<div class="p-2">
-              <h3 class="font-bold">${location.name}</h3>
-              <p class="text-sm">${location.location_address || 'Endereço não informado'}</p>
-              <p class="text-xs text-muted-foreground mt-1">Status: ${location.status}</p>
-            </div>`
-          );
-
-          new mapboxgl.Marker({ color })
-            .setLngLat([location.location_lng, location.location_lat])
-            .setPopup(popup)
-            .addTo(map.current!);
-        }
-      });
-
-      // Fit bounds to show all markers
-      if (locations.length > 0) {
-        const bounds = new mapboxgl.LngLatBounds();
-        locations.forEach((loc) => {
-          if (loc.location_lat && loc.location_lng) {
-            bounds.extend([loc.location_lng, loc.location_lat]);
-          }
-        });
-        map.current.fitBounds(bounds, { padding: 50 });
-      }
     } catch (error) {
       console.error('Erro ao inicializar mapa:', error);
-      toast.error('Erro ao carregar mapa. Verifique o token Mapbox.');
+      toast.error('Erro ao carregar mapa.');
     }
 
     return () => {
-      map.current?.remove();
+      if (map.current) {
+        map.current.remove();
+      }
     };
-  }, [locations, tokenSaved, mapboxToken]);
+  }, []);
 
-  const handleSaveToken = () => {
-    if (!mapboxToken.trim()) {
-      toast.error('Digite um token válido');
-      return;
+  const addMarkersToMap = () => {
+    if (!map.current) return;
+
+    // Limpa marcadores anteriores
+    markers.current.forEach(marker => {
+      map.current!.removeLayer(marker);
+    });
+    markers.current = [];
+
+    const statusColors: Record<string, string> = {
+      available: '#22c55e',
+      in_use: '#3b82f6',
+      maintenance: '#ef4444',
+      washing: '#f59e0b'
+    };
+
+    const group = new L.FeatureGroup();
+
+    // Adiciona marcadores para cada localização
+    locations.forEach((location) => {
+      if (location.location_lat && location.location_lng) {
+        const color = statusColors[location.status] || '#6b7280';
+
+        // Cria ícone personalizado
+        const customIcon = L.divIcon({
+          className: 'custom-marker',
+          html: `
+            <div style="
+              background-color: ${color};
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+              border: 3px solid white;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              cursor: pointer;
+            "></div>
+          `,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+
+        const marker = L.marker([location.location_lat, location.location_lng], {
+          icon: customIcon
+        }).addTo(map.current!);
+
+        // Popup com informações
+        marker.bindPopup(`
+          <div class="p-2 min-w-[200px]">
+            <h3 class="font-bold text-sm">${location.name}</h3>
+            <p class="text-xs text-gray-600 mt-1">${location.location_address || 'Endereço não informado'}</p>
+            <p class="text-xs text-gray-500 mt-1">
+              Status: <span style="color: ${color}">${location.status}</span>
+            </p>
+            <p class="text-xs text-gray-400 mt-2">
+              Lat: ${location.location_lat.toFixed(4)}, Lng: ${location.location_lng.toFixed(4)}
+            </p>
+          </div>
+        `);
+
+        markers.current.push(marker);
+        group.addLayer(marker);
+      }
+    });
+
+    // Ajusta o zoom para mostrar todos os marcadores
+    if (group.getLayers().length > 0) {
+      map.current.fitBounds(group.getBounds(), { 
+        padding: [20, 20],
+        maxZoom: 15 
+      });
     }
-    localStorage.setItem('mapbox_token', mapboxToken);
-    setTokenSaved(true);
-    toast.success('Token salvo! Mapa carregando...');
   };
 
-  if (!tokenSaved) {
-    return (
-      <Card className="shadow-card-eco h-[600px] flex items-center justify-center">
-        <CardContent className="max-w-md p-8">
-          <h3 className="text-lg font-semibold mb-4">Configure o Mapbox</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Para usar o mapa interativo, você precisa de um token do Mapbox.
-            <a 
-              href="https://account.mapbox.com/access-tokens/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline ml-1"
-            >
-              Obtenha seu token aqui
-            </a>
-          </p>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="mapbox-token">Token Mapbox</Label>
-              <Input
-                id="mapbox-token"
-                type="password"
-                value={mapboxToken}
-                onChange={(e) => setMapboxToken(e.target.value)}
-                placeholder="pk.eyJ1..."
-              />
-            </div>
-            <Button onClick={handleSaveToken} className="w-full">
-              Salvar e Carregar Mapa
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Atualiza marcadores quando locations mudar
+  useEffect(() => {
+    if (map.current) {
+      addMarkersToMap();
+    }
+  }, [locations]);
 
   return (
     <div className="relative w-full h-[600px] rounded-lg overflow-hidden shadow-card-eco">

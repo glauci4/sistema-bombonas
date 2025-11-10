@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { BarChart3, TrendingUp, Package, Recycle, FileText, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ReportStats {
   totalBombonas: number;
@@ -23,6 +25,7 @@ const Reports = () => {
     totalCycles: 0
   });
   const [loading, setLoading] = useState(true);
+  const [loadingReport, setLoadingReport] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -50,6 +53,25 @@ const Reports = () => {
       console.error('Erro ao carregar estatísticas:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ← FUNÇÃO ATUALIZADA QUE CHAMA A API REAL
+  const gerarRelatorio = async (tipo: string) => {
+    setLoadingReport(tipo);
+    try {
+      // Abre a API em nova aba para download automático
+      window.open(`/api/relatorios/${tipo}`, '_blank');
+      
+      // Espera um pouco para dar tempo do download iniciar
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success(`Relatório ${tipo} sendo gerado...`);
+      
+    } catch (error) {
+      toast.error('Erro ao gerar relatório');
+    } finally {
+      setLoadingReport(null);
     }
   };
 
@@ -190,29 +212,74 @@ const Reports = () => {
                   <CardDescription>Gere relatórios detalhados do sistema</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <button className="w-full flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors">
-                    <FileText className="w-5 h-5 text-primary" />
-                    <div className="text-left">
-                      <p className="font-semibold">Relatório Mensal</p>
-                      <p className="text-xs text-muted-foreground">Estatísticas do último mês</p>
+                  {/* BOTÃO 1 - RELATÓRIO MENSAL */}
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start h-auto p-4"
+                    onClick={() => gerarRelatorio('mensal')}
+                    disabled={loadingReport === 'mensal'}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-muted-foreground" />
+                      <div className="text-left">
+                        <div className="font-semibold">Relatório Mensal</div>
+                        <div className="text-xs text-muted-foreground">
+                          Estatísticas do último mês
+                        </div>
+                      </div>
                     </div>
-                  </button>
+                    {loadingReport === 'mensal' && (
+                      <div className="ml-auto">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      </div>
+                    )}
+                  </Button>
 
-                  <button className="w-full flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    <div className="text-left">
-                      <p className="font-semibold">Relatório Anual</p>
-                      <p className="text-xs text-muted-foreground">Consolidado do ano</p>
+                  {/* BOTÃO 2 - RELATÓRIO ANUAL */}
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start h-auto p-4"
+                    onClick={() => gerarRelatorio('anual')}
+                    disabled={loadingReport === 'anual'}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <div className="text-left">
+                        <div className="font-semibold">Relatório Anual</div>
+                        <div className="text-xs text-muted-foreground">
+                          Consolidado do ano
+                        </div>
+                      </div>
                     </div>
-                  </button>
+                    {loadingReport === 'anual' && (
+                      <div className="ml-auto">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      </div>
+                    )}
+                  </Button>
 
-                  <button className="w-full flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors">
-                    <BarChart3 className="w-5 h-5 text-primary" />
-                    <div className="text-left">
-                      <p className="font-semibold">Analytics Completo</p>
-                      <p className="text-xs text-muted-foreground">Todos os dados históricos</p>
+                  {/* BOTÃO 3 - ANALYTICS COMPLETO */}
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start h-auto p-4"
+                    onClick={() => gerarRelatorio('completo')}
+                    disabled={loadingReport === 'completo'}
+                  >
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className="w-5 h-5 text-muted-foreground" />
+                      <div className="text-left">
+                        <div className="font-semibold">Analytics Completo</div>
+                        <div className="text-xs text-muted-foreground">
+                          Todos os dados históricos
+                        </div>
+                      </div>
                     </div>
-                  </button>
+                    {loadingReport === 'completo' && (
+                      <div className="ml-auto">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      </div>
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
             </div>

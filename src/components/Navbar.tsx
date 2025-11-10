@@ -31,7 +31,7 @@ const Navbar = () => {
               <Leaf className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">EcoTrack</h1>
+              <h1 className="text-xl font-bold text-foreground">BonnaTech</h1>
               <p className="text-xs text-muted-foreground">Gestão Sustentável</p>
             </div>
           </button>

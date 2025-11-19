@@ -204,7 +204,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      gerar_relatorio_mensal: {
+        Args: {
+          mes: number;
+          ano: number;
+        };
+        Returns: Array<{
+          total_bombonas: number;
+          bombonas_ativas: number;
+          bombonas_em_uso: number;
+          total_usuarios: number;
+          produtos_mais_utilizados: string;
+          ciclos_mensais: number;
+        }>;
+      };
+      gerar_relatorio_anual: {
+        Args: {
+          ano: number;
+        };
+        Returns: Array<{
+          mes: string;
+          total_bombonas: number;
+          bombonas_ativas: number;
+          bombonas_em_uso: number;
+          novos_usuarios: number;
+        }>;
+      };
     }
     Enums: {
       [_ in never]: never

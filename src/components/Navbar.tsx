@@ -43,7 +43,7 @@ const Navbar = () => {
               className={isActive('/') ? "text-primary" : "text-foreground hover:text-primary"}
               onClick={() => navigate('/')}
             >
-              Dashboard
+              Visão Geral
             </Button>
             <Button 
               variant="ghost" 

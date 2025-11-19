@@ -8,7 +8,7 @@ import Auth from "./pages/Auth";
 import Bombonas from "./pages/Bombonas";
 import Scanner from "./pages/Scanner";
 import Map from "./pages/Map";
-import Reports from "./pages/Reports";
+import Reports from "./pages/Reports"; 
 import Demo from "./pages/Demo";
 import AllAssets from "./pages/AllAssets";
 import BombonaDetails from "./pages/BombonaDetails";
@@ -27,14 +27,70 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-          <Route path="/demo" element={<ProtectedRoute><Demo /></ProtectedRoute>} />
-          <Route path="/all-assets" element={<ProtectedRoute><AllAssets /></ProtectedRoute>} />
-          <Route path="/bombonas" element={<ProtectedRoute><Bombonas /></ProtectedRoute>} />
-          <Route path="/bombonas/details/:id" element={<ProtectedRoute><BombonaDetails /></ProtectedRoute>} />
-          <Route path="/scanner" element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
-          <Route path="/mapa" element={<ProtectedRoute><Map /></ProtectedRoute>} />
-          <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/demo" 
+            element={
+              <ProtectedRoute>
+                <Demo />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/all-assets" 
+            element={
+              <ProtectedRoute>
+                <AllAssets />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/bombonas" 
+            element={
+              <ProtectedRoute>
+                <Bombonas />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/bombonas/details/:id" 
+            element={
+              <ProtectedRoute>
+                <BombonaDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/scanner" 
+            element={
+              <ProtectedRoute>
+                <Scanner />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/mapa" 
+            element={
+              <ProtectedRoute>
+                <Map />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/relatorios" 
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            } 
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

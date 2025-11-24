@@ -1,73 +1,60 @@
-# Welcome to your Lovable project
+# 🏭 BonnaTech - Sistema de Gestão de Bombonas Sustentáveis
 
-## Project info
+![BonnaTech](https://img.shields.io/badge/BonnaTech-Sistema%20Verde-brightgreen)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue)
+![React](https://img.shields.io/badge/React-18+-61dafb)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-green)
 
-**URL**: https://lovable.dev/projects/53370eb2-9a6e-4d14-99c8-fb65525723ad
+Sistema completo para gestão inteligente de bombonas reutilizáveis, promovendo economia circular e rastreabilidade total do ciclo de vida dos ativos.
 
-## How can I edit this code?
+## 🌟 Funcionalidades Principais
 
-There are several ways of editing your application.
+### 📊 Dashboard e Analytics
+- **Painel em Tempo Real**: Métricas atualizadas de bombonas, lavagens e despachos
+- **Gráficos Interativos**: Distribuição por status, material, tendências mensais e anuais
+- **Relatórios PDF**: Exportação de relatórios completos, mensais e anuais
 
-**Use Lovable**
+### 🔧 Gestão de Ativos
+- **Cadastro de Bombonas**: QR Code único para cada bombona
+- **Rastreamento Completo**: Status em tempo real (Disponível, Em Uso, Lavagem, Manutenção)
+- **Histórico de Ciclos**: Controle completo de vida útil
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/53370eb2-9a6e-4d14-99c8-fb65525723ad) and start prompting.
+### 🚚 Operações
+- **Gestão de Despachos**: Controle de envio e retorno de bombonas
+- **Sistema de Lavagem**: Registro e controle de processos de higienização
+- **Scanner QR Code**: Leitura rápida via câmera para atualizações
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🗺️ Mapa Interativo
+- **Visualização Geográfica**: Localização de bombonas em tempo real
+- **Filtros Inteligentes**: Busca por status, tipo e localização
 
-**Use your preferred IDE**
+## 🛠️ Tecnologias Utilizadas
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend
+- **React 18** + TypeScript
+- **Tailwind CSS** + Shadcn/UI
+- **Chart.js** para visualizações
+- **React Router** para navegação
+- **HTML2Canvas & jsPDF** para relatórios
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Backend & Infraestrutura
+- **Supabase**: Banco de dados PostgreSQL
+- **Autenticação**: Sistema seguro de login
+- **Storage**: Armazenamento de imagens e documentos
+- **APIs REST**: Endpoints para todas as operações
 
-Follow these steps:
+### Desenvolvimento
+- **Vite**: Build tool ultra-rápido
+- **ESLint + Prettier**: Padronização de código
+- **Git**: Controle de versão
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🚀 Como Executar o Projeto
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Pré-requisitos
+- Node.js 18+ ou Bun
+- Conta no Supabase
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/53370eb2-9a6e-4d14-99c8-fb65525723ad) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### 1. Clone o repositório
+```bash
+git clone https://github.com/seu-usuario/sistema-bombonas.git
+cd sistema-bombonas

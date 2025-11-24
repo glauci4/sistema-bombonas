@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,57 +8,42 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Package, MapPin, Activity, CheckCircle2, AlertCircle, Clock, 
-  ArrowLeft, Calendar, Droplet, Box, Palette, History, Download 
+  ArrowLeft, Calendar, Droplet, Box, Palette, History, Download,
+  Edit, Trash2, Send
 } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-
-interface Bombona {
-  id: string;
-  name: string;
-  qr_code: string;
-  capacity: number;
-  material: string;
-  type: string;
-  status: string;
-  color: string | null;
-  location_address: string | null;
-  location_lat: number | null;
-  location_lng: number | null;
-  current_product: string | null;
-  total_cycles: number;
-  last_wash_date: string | null;
-  created_at: string;
-}
-
-interface TrackingHistory {
-  id: string;
-  created_at: string;
-  status: string;
-  location_address: string | null;
-  notes: string | null;
-}
+import { Bombona, BombonaStatus, BombonaFromDB, convertBombonaFromDB, TrackingHistory } from '@/services/types';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import DespachoForm from '@/components/DespachoForm';
+import { bombonaService } from '@/services/bombonaService'; 
 
 const statusConfig = {
   available: {
     label: 'Disponível',
     icon: CheckCircle2,
-    color: 'bg-success text-success-foreground',
+    color: 'bg-green-100 text-green-800 border-green-200',
   },
   in_use: {
     label: 'Em Uso',
     icon: Activity,
-    color: 'bg-primary text-primary-foreground',
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
   },
   maintenance: {
     label: 'Manutenção',
     icon: AlertCircle,
-    color: 'bg-destructive text-destructive-foreground',
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   },
   washing: {
     label: 'Lavagem',
     icon: Clock,
-    color: 'bg-accent text-accent-foreground',
+    color: 'bg-purple-100 text-purple-800 border-purple-200',
+  },
+  lost: {
+    label: 'Extraviada',
+    icon: AlertCircle,
+    color: 'bg-red-100 text-red-800 border-red-200',
   },
 };
 
@@ -70,20 +55,7 @@ const BombonaDetails = () => {
   const [loading, setLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
-  useEffect(() => {
-    if (id) {
-      fetchBombonaDetails();
-      fetchTrackingHistory();
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (bombona) {
-      generateQRCode(bombona.qr_code);
-    }
-  }, [bombona]);
-
-  const fetchBombonaDetails = async () => {
+  const fetchBombonaDetails = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('bombonas')
@@ -92,16 +64,18 @@ const BombonaDetails = () => {
         .single();
 
       if (error) throw error;
-      setBombona(data);
-    } catch (error: any) {
+      
+      const convertedBombona = convertBombonaFromDB(data);
+      setBombona(convertedBombona);
+    } catch (error: unknown) {
+      console.error('Erro ao carregar detalhes da bombona:', error);
       toast.error('Erro ao carregar detalhes da bombona');
-      console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchTrackingHistory = async () => {
+  const fetchTrackingHistory = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('tracking_history')
@@ -111,10 +85,23 @@ const BombonaDetails = () => {
 
       if (error) throw error;
       setHistory(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao carregar histórico:', error);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchBombonaDetails();
+      fetchTrackingHistory();
+    }
+  }, [id, fetchBombonaDetails, fetchTrackingHistory]);
+
+  useEffect(() => {
+    if (bombona) {
+      generateQRCode(bombona.qr_code);
+    }
+  }, [bombona]);
 
   const generateQRCode = async (text: string) => {
     try {
@@ -139,6 +126,33 @@ const BombonaDetails = () => {
       link.href = qrCodeUrl;
       link.click();
       toast.success('QR Code baixado!');
+    }
+  };
+
+  const updateBombonaStatus = async (newStatus: BombonaStatus) => {
+    if (!bombona) return;
+
+    try {
+      const success = await bombonaService.updateBombonaStatus(bombona.id, newStatus);
+      if (success) {
+        setBombona({ ...bombona, status: newStatus });
+        fetchTrackingHistory();
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao atualizar status:', error);
+    }
+  };
+
+  const handleDeleteBombona = async () => {
+    if (!bombona) return;
+
+    try {
+      const success = await bombonaService.deleteBombona(bombona.id);
+      if (success) {
+        navigate('/bombonas');
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao excluir bombona:', error);
     }
   };
 
@@ -182,7 +196,7 @@ const BombonaDetails = () => {
     );
   }
 
-  const statusInfo = statusConfig[bombona.status as keyof typeof statusConfig];
+  const statusInfo = statusConfig[bombona.status];
   const StatusIcon = statusInfo.icon;
 
   return (
@@ -190,16 +204,46 @@ const BombonaDetails = () => {
       <Navbar />
       
       <main className="container mx-auto px-4 lg:px-8 py-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
+        <div className="flex justify-between items-center mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Button>
+          
+          <div className="flex gap-2">
+            {/* Botão de Despacho - Só mostra se a bombona estiver disponível */}
+            {bombona.status === 'available' && (
+              <DespachoForm 
+                bombona={bombona} 
+                onDespachoCreated={fetchBombonaDetails}
+              />
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/bombonas/edit/${bombona.id}`)}
+              className="flex items-center gap-2"
+            >
+              <Edit className="w-4 h-4" />
+              Editar
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteBombona}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Excluir
+            </Button>
+          </div>
+        </div>
 
-        {/* Header Card */}
+        {/* Detalhes da Bombona */}
         <Card className="mb-6 shadow-card-eco">
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row gap-6">
@@ -213,13 +257,13 @@ const BombonaDetails = () => {
                     <h1 className="text-2xl font-bold text-foreground mb-2">{bombona.name}</h1>
                     <p className="text-muted-foreground">QR Code: {bombona.qr_code}</p>
                   </div>
-                  <Badge className={statusInfo.color}>
+                  <Badge variant="outline" className={statusInfo.color}>
                     <StatusIcon className="w-4 h-4 mr-1" />
                     {statusInfo.label}
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div className="flex items-center gap-2">
                     <Box className="w-4 h-4 text-muted-foreground" />
                     <div>
@@ -251,12 +295,32 @@ const BombonaDetails = () => {
                     </div>
                   )}
                 </div>
+
+                {}
+                <div className="max-w-xs">
+                  <Label htmlFor="status-select" className="text-sm">Alterar Status</Label>
+                  <Select 
+                    value={bombona.status} 
+                    onValueChange={(value: BombonaStatus) => updateBombonaStatus(value)}
+                  >
+                    <SelectTrigger id="status-select" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Disponível</SelectItem>
+                      <SelectItem value="in_use">Em Uso</SelectItem>
+                      <SelectItem value="maintenance">Manutenção</SelectItem>
+                      <SelectItem value="washing">Lavagem</SelectItem>
+                      <SelectItem value="lost">Extraviada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tabs */}
+        {}
         <Tabs defaultValue="info" className="space-y-6">
           <TabsList>
             <TabsTrigger value="info">Informações</TabsTrigger>
@@ -278,7 +342,7 @@ const BombonaDetails = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Status</p>
-                    <Badge className={statusInfo.color}>
+                    <Badge variant="outline" className={statusInfo.color}>
                       <StatusIcon className="w-3 h-3 mr-1" />
                       {statusInfo.label}
                     </Badge>
@@ -362,8 +426,12 @@ const BombonaDetails = () => {
                       <div key={item.id} className="flex gap-4 pb-4 border-b last:border-0">
                         <div className="w-2 h-2 rounded-full bg-primary mt-2"></div>
                         <div className="flex-1">
-                          <p className="font-semibold">{statusConfig[item.status as keyof typeof statusConfig]?.label || item.status}</p>
-                          <p className="text-sm text-muted-foreground">{formatDate(item.created_at)}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className={statusConfig[item.status as keyof typeof statusConfig]?.color}>
+                              {statusConfig[item.status as keyof typeof statusConfig]?.label || item.status}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">{formatDate(item.created_at)}</span>
+                          </div>
                           {item.location_address && (
                             <p className="text-sm text-muted-foreground mt-1">
                               <MapPin className="w-3 h-3 inline mr-1" />

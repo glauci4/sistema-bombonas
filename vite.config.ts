@@ -13,4 +13,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    force: true, // ADICIONE ESTA LINHA
+    exclude: ['lucide-react']
+  },
 })

@@ -6,197 +6,355 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
-  }
+export interface Database {
   public: {
     Tables: {
       bombonas: {
         Row: {
-          capacity: number
-          color: string | null
-          created_at: string | null
-          current_product: string | null
           id: string
-          last_wash_date: string | null
+          name: string
+          qr_code: string
+          capacity: number
+          material: string
+          type: string
+          status: string
+          color: string | null
           location_address: string | null
+          current_product: string | null
+          total_cycles: number
+          owner_id: string
+          created_at: string
+          updated_at: string
+          last_wash_date: string | null
           location_lat: number | null
           location_lng: number | null
-          material: string
-          name: string
-          owner_id: string | null
-          qr_code: string
-          status: string | null
-          total_cycles: number | null
-          type: string
-          updated_at: string | null
         }
         Insert: {
-          capacity: number
-          color?: string | null
-          created_at?: string | null
-          current_product?: string | null
           id?: string
-          last_wash_date?: string | null
+          name: string
+          qr_code: string
+          capacity: number
+          material: string
+          type: string
+          status?: string
+          color?: string | null
           location_address?: string | null
+          current_product?: string | null
+          total_cycles?: number
+          owner_id: string
+          created_at?: string
+          updated_at?: string
+          last_wash_date?: string | null
           location_lat?: number | null
           location_lng?: number | null
-          material: string
-          name: string
-          owner_id?: string | null
-          qr_code: string
-          status?: string | null
-          total_cycles?: number | null
-          type: string
-          updated_at?: string | null
         }
         Update: {
-          capacity?: number
-          color?: string | null
-          created_at?: string | null
-          current_product?: string | null
           id?: string
-          last_wash_date?: string | null
+          name?: string
+          qr_code?: string
+          capacity?: number
+          material?: string
+          type?: string
+          status?: string
+          color?: string | null
           location_address?: string | null
+          current_product?: string | null
+          total_cycles?: number
+          owner_id?: string
+          created_at?: string
+          updated_at?: string
+          last_wash_date?: string | null
           location_lat?: number | null
           location_lng?: number | null
-          material?: string
-          name?: string
-          owner_id?: string | null
-          qr_code?: string
-          status?: string | null
-          total_cycles?: number | null
-          type?: string
-          updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "bombonas_owner_id_fkey"
             columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      lavagens: {
+        Row: {
+          id: string
+          bombona_id: string
+          data_lavagem: string
+          produto_anterior: string | null
+          produto_novo: string | null
+          observacoes: string | null
+          ciclos_antes: number
+          ciclos_depois: number
+          user_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          bombona_id: string
+          data_lavagem: string
+          produto_anterior?: string | null
+          produto_novo?: string | null
+          observacoes?: string | null
+          ciclos_antes?: number
+          ciclos_depois?: number
+          user_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          bombona_id?: string
+          data_lavagem?: string
+          produto_anterior?: string | null
+          produto_novo?: string | null
+          observacoes?: string | null
+          ciclos_antes?: number
+          ciclos_depois?: number
+          user_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lavagens_bombona_id_fkey"
+            columns: ["bombona_id"]
+            referencedRelation: "bombonas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "lavagens_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      despachos: {
+        Row: {
+          id: string
+          bombona_id: string
+          destino: string
+          endereco: string
+          latitude: number | null
+          longitude: number | null
+          data_despacho: string
+          data_prevista_retorno: string | null
+          responsavel: string
+          observacoes: string | null
+          status: string
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          bombona_id: string
+          destino: string
+          endereco: string
+          latitude?: number | null
+          longitude?: number | null
+          data_despacho?: string
+          data_prevista_retorno?: string | null
+          responsavel: string
+          observacoes?: string | null
+          status?: string
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          bombona_id?: string
+          destino?: string
+          endereco?: string
+          latitude?: number | null
+          longitude?: number | null
+          data_despacho?: string
+          data_prevista_retorno?: string | null
+          responsavel?: string
+          observacoes?: string | null
+          status?: string
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despachos_bombona_id_fkey"
+            columns: ["bombona_id"]
+            referencedRelation: "bombonas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despachos_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      profiles: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          role: string
+          company: string | null
+          avatar_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          role?: string
+          company?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          role?: string
+          company?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string | null
+          type: string
+          is_read: boolean
+          related_entity: string | null
+          related_entity_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message?: string | null
+          type?: string
+          is_read?: boolean
+          related_entity?: string | null
+          related_entity_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string | null
+          type?: string
+          is_read?: boolean
+          related_entity?: string | null
+          related_entity_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
         ]
       }
       products: {
         Row: {
-          category: string
-          compatible_materials: string[] | null
-          created_at: string | null
-          danger_level: string | null
           id: string
           name: string
-          requires_certification: boolean | null
+          category: string
           subcategory: string | null
+          danger_level: string | null
+          requires_certification: boolean
+          compatible_materials: string[] | null
+          created_at: string
         }
         Insert: {
-          category: string
-          compatible_materials?: string[] | null
-          created_at?: string | null
-          danger_level?: string | null
           id?: string
           name: string
-          requires_certification?: boolean | null
+          category: string
           subcategory?: string | null
+          danger_level?: string | null
+          requires_certification?: boolean
+          compatible_materials?: string[] | null
+          created_at?: string
         }
         Update: {
-          category?: string
-          compatible_materials?: string[] | null
-          created_at?: string | null
-          danger_level?: string | null
           id?: string
           name?: string
-          requires_certification?: boolean | null
+          category?: string
           subcategory?: string | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          company: string | null
-          created_at: string | null
-          email: string
-          full_name: string | null
-          id: string
-          role: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          company?: string | null
-          created_at?: string | null
-          email: string
-          full_name?: string | null
-          id: string
-          role?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          company?: string | null
-          created_at?: string | null
-          email?: string
-          full_name?: string | null
-          id?: string
-          role?: string | null
-          updated_at?: string | null
+          danger_level?: string | null
+          requires_certification?: boolean
+          compatible_materials?: string[] | null
+          created_at?: string
         }
         Relationships: []
       }
       tracking_history: {
         Row: {
-          bombona_id: string
-          created_at: string | null
-          created_by: string | null
           id: string
+          bombona_id: string
+          status: string
           location_address: string | null
           location_lat: number | null
           location_lng: number | null
           notes: string | null
-          status: string
+          created_by: string | null
+          created_at: string
         }
         Insert: {
-          bombona_id: string
-          created_at?: string | null
-          created_by?: string | null
           id?: string
+          bombona_id: string
+          status: string
           location_address?: string | null
           location_lat?: number | null
           location_lng?: number | null
           notes?: string | null
-          status: string
+          created_by?: string | null
+          created_at?: string
         }
         Update: {
-          bombona_id?: string
-          created_at?: string | null
-          created_by?: string | null
           id?: string
+          bombona_id?: string
+          status?: string
           location_address?: string | null
           location_lat?: number | null
           location_lng?: number | null
           notes?: string | null
-          status?: string
+          created_by?: string | null
+          created_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "tracking_history_bombona_id_fkey"
             columns: ["bombona_id"]
-            isOneToOne: false
             referencedRelation: "bombonas"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tracking_history_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
+          }
         ]
       }
     }
@@ -204,32 +362,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      gerar_relatorio_mensal: {
-        Args: {
-          mes: number;
-          ano: number;
-        };
-        Returns: Array<{
-          total_bombonas: number;
-          bombonas_ativas: number;
-          bombonas_em_uso: number;
-          total_usuarios: number;
-          produtos_mais_utilizados: string;
-          ciclos_mensais: number;
-        }>;
-      };
-      gerar_relatorio_anual: {
-        Args: {
-          ano: number;
-        };
-        Returns: Array<{
-          mes: string;
-          total_bombonas: number;
-          bombonas_ativas: number;
-          bombonas_em_uso: number;
-          novos_usuarios: number;
-        }>;
-      };
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
@@ -239,126 +372,3 @@ export type Database = {
     }
   }
 }
-
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
-
-export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
-
-export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
-
-export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {},
-  },
-} as const

@@ -3,9 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, MapPin, Activity, CheckCircle2, AlertCircle, Clock, Loader2 } from "lucide-react";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface Asset {
   id: string;
@@ -18,7 +17,6 @@ interface Asset {
   qr_code: string;
 }
 
-// Atualize o statusConfig para incluir "washing" e usar os mesmos status do AllAssets
 const statusConfig = {
   available: {
     label: "Disponível",
@@ -26,7 +24,7 @@ const statusConfig = {
     color: "bg-success text-success-foreground",
   },
   in_use: {
-    label: "Em Uso", 
+    label: "Em Uso",
     icon: Activity,
     color: "bg-primary text-primary-foreground",
   },
@@ -48,49 +46,6 @@ const AssetOverview = () => {
   const [loading, setLoading] = useState(true);
   const [totalAssets, setTotalAssets] = useState(0);
 
-  useEffect(() => {
-    fetchAssets();
-  }, []);
-
-  const fetchAssets = async () => {
-    try {
-      // Busca as últimas 4 bombonas para a visão geral
-      const { data: recentBombonas, error } = await supabase
-        .from('bombonas')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(4);
-
-      if (error) throw error;
-
-      // Busca o total de bombonas para o botão
-      const { count } = await supabase
-        .from('bombonas')
-        .select('*', { count: 'exact', head: true });
-
-      setTotalAssets(count || 0);
-
-      // Converte os dados do banco para o formato do componente
-      const formattedAssets: Asset[] = (recentBombonas || []).map(bombona => ({
-        id: bombona.id,
-        name: bombona.name,
-        type: bombona.type,
-        location: bombona.location_address || 'Localização não informada',
-        status: (bombona.status as "available" | "in_use" | "maintenance" | "washing") || 'available',
-        lastWash: formatLastWash(bombona.last_wash_date),
-        cycles: bombona.total_cycles || 0,
-        qr_code: bombona.qr_code
-      }));
-
-      setAssets(formattedAssets);
-    } catch (error: any) {
-      toast.error('Erro ao carregar ativos');
-      console.error('Erro ao buscar bombonas:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatLastWash = (lastWashDate: string | null): string => {
     if (!lastWashDate) return 'Nunca lavada';
     
@@ -103,6 +58,45 @@ const AssetOverview = () => {
     if (diffDays === 1) return 'Há 1 dia';
     return `Há ${diffDays} dias`;
   };
+
+  const fetchAssets = useCallback(async () => {
+    try {
+      const { data: recentBombonas, error } = await supabase
+        .from('bombonas')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (error) throw error;
+
+      const { count } = await supabase
+        .from('bombonas')
+        .select('*', { count: 'exact', head: true });
+
+      setTotalAssets(count || 0);
+
+      const formattedAssets: Asset[] = (recentBombonas || []).map(bombona => ({
+        id: bombona.id,
+        name: bombona.name,
+        type: bombona.type,
+        location: bombona.location_address || 'Localização não informada',
+        status: (bombona.status as "available" | "in_use" | "maintenance" | "washing") || 'available',
+        lastWash: formatLastWash(bombona.last_wash_date),
+        cycles: bombona.total_cycles || 0,
+        qr_code: bombona.qr_code
+      }));
+
+      setAssets(formattedAssets);
+    } catch (error: unknown) {
+      console.error('Erro ao buscar bombonas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAssets();
+  }, [fetchAssets]);
 
   if (loading) {
     return (

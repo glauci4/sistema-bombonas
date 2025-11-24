@@ -1,5 +1,5 @@
 {
-  "name": "BonnaTech",
+  "name": "bonnatech",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -10,7 +10,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install:fix": "npm install --legacy-peer-deps"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -57,14 +58,15 @@
     "jspdf": "^3.0.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.462.0",
-    "next": "^16.0.1",
-    "next-themes": "^0.3.0",
+    "next-themes": "^0.4.6",
     "pdf-lib": "^1.17.1",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
+    "react-chartjs-2": "^5.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.61.1",
+    "react-leaflet": "^4.2.1",
     "react-resizable-panels": "^2.1.9",
     "react-router-dom": "^6.30.1",
     "recharts": "^2.15.4",
@@ -78,6 +80,7 @@
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/exceljs": "^0.5.3",
+    "@types/html2canvas": "^0.5.35",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
@@ -93,5 +96,11 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19"
+  },
+  "overrides": {
+    "react-leaflet": {
+      "react": "^18.3.1",
+      "react-dom": "^18.3.1"
+    }
   }
 }

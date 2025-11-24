@@ -1,17 +1,34 @@
-import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-export const useAuth = () => {
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>;
+  signOut: () => Promise<{ error: AuthError | null }>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
+    getSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -19,13 +36,6 @@ export const useAuth = () => {
         setLoading(false);
       }
     );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -40,11 +50,11 @@ export const useAuth = () => {
       if (error) throw error;
       
       toast.success('Login realizado com sucesso!');
-      navigate('/');
       return { error: null };
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao fazer login');
-      return { error };
+    } catch (error) {
+      const authError = error as AuthError;
+      toast.error(authError.message || 'Erro ao fazer login');
+      return { error: authError };
     }
   };
 
@@ -65,12 +75,12 @@ export const useAuth = () => {
       
       if (error) throw error;
       
-      toast.success('Conta criada com sucesso!');
-      navigate('/');
+      toast.success('Conta criada com sucesso! Verifique seu email para confirmação.');
       return { error: null };
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar conta');
-      return { error };
+    } catch (error) {
+      const authError = error as AuthError;
+      toast.error(authError.message || 'Erro ao criar conta');
+      return { error: authError };
     }
   };
 
@@ -80,15 +90,15 @@ export const useAuth = () => {
       if (error) throw error;
       
       toast.success('Logout realizado com sucesso!');
-      navigate('/auth');
       return { error: null };
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao fazer logout');
-      return { error };
+    } catch (error) {
+      const authError = error as AuthError;
+      toast.error(authError.message || 'Erro ao fazer logout');
+      return { error: authError };
     }
   };
 
-  return {
+  const value = {
     user,
     session,
     loading,
@@ -96,4 +106,19 @@ export const useAuth = () => {
     signUp,
     signOut,
   };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

@@ -8,7 +8,6 @@ import { QrCode, Camera, Search, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Html5Qrcode } from 'html5-qrcode';
 
 interface BombonaInfo {
   id: string;
@@ -27,58 +26,66 @@ const Scanner = () => {
   const [bombona, setBombona] = useState<BombonaInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-
-  useEffect(() => {
-    return () => {
-      stopScanning();
-    };
-  }, []);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const startScanning = async () => {
     try {
-      const devices = await Html5Qrcode.getCameras();
-      if (devices && devices.length > 0) {
-        const scanner = new Html5Qrcode("qr-reader");
-        scannerRef.current = scanner;
-        
-        await scanner.start(
-          devices[0].id,
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          },
-          (decodedText) => {
-            setQrCode(decodedText);
-            handleSearch(decodedText);
-            stopScanning();
-          },
-          () => {
-            // Ignore scanning errors
-          }
-        );
+      setCameraError(null);
+      
+      // Parar scanner anterior se existir
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      // Solicitar acesso à câmera
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment'
+        } 
+      });
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
         setScanning(true);
-        toast.success('Câmera ativada!');
-      } else {
-        toast.error('Nenhuma câmera encontrada');
+        toast.success('Câmera ativada! Aponte para o QR Code');
       }
     } catch (error) {
-      console.error('Erro ao iniciar scanner:', error);
-      toast.error('Erro ao acessar câmera');
+      console.error('Erro ao acessar câmera:', error);
+      
+      let errorMessage = 'Erro ao acessar a câmera';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Permissão da câmera negada. Clique no ícone de cadeado e permita a câmera.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'Nenhuma câmera encontrada no dispositivo.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setCameraError(errorMessage);
+      toast.error('Falha ao acessar câmera');
     }
   };
 
-  const stopScanning = async () => {
-    if (scannerRef.current && scanning) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-        scannerRef.current = null;
-        setScanning(false);
-      } catch (error) {
-        console.error('Erro ao parar scanner:', error);
-      }
+  const stopScanning = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+      });
+      streamRef.current = null;
     }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
+    setScanning(false);
+    setCameraError(null);
   };
 
   const handleSearch = async (code?: string) => {
@@ -114,6 +121,12 @@ const Scanner = () => {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      stopScanning();
+    };
+  }, []);
+
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       available: 'Disponível',
@@ -125,13 +138,13 @@ const Scanner = () => {
   };
 
   const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      available: 'bg-success text-success-foreground',
-      in_use: 'bg-primary text-primary-foreground',
-      maintenance: 'bg-destructive text-destructive-foreground',
-      washing: 'bg-accent text-accent-foreground'
+    const colors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      available: 'default',
+      in_use: 'secondary',
+      maintenance: 'destructive',
+      washing: 'outline'
     };
-    return colors[status] || 'bg-muted text-muted-foreground';
+    return colors[status] || 'default';
   };
 
   return (
@@ -141,14 +154,14 @@ const Scanner = () => {
       <main className="container mx-auto px-4 lg:px-8 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-eco shadow-eco mb-4">
-              <QrCode className="w-8 h-8 text-primary-foreground" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+              <QrCode className="w-8 h-8 text-primary" />
             </div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Scanner QR Code</h1>
             <p className="text-muted-foreground">Escaneie ou digite o código QR para rastrear a bombona</p>
           </div>
 
-          <Card className="shadow-card-eco mb-6">
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle>Buscar Bombona</CardTitle>
               <CardDescription>Digite o código QR da bombona</CardDescription>
@@ -166,7 +179,7 @@ const Scanner = () => {
                   />
                   <Button onClick={() => handleSearch()} disabled={loading}>
                     <Search className="w-4 h-4 mr-2" />
-                    Buscar
+                    {loading ? 'Buscando...' : 'Buscar'}
                   </Button>
                 </div>
               </div>
@@ -176,9 +189,15 @@ const Scanner = () => {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">ou</span>
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
                 </div>
               </div>
+
+              {cameraError && (
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-md">
+                  <p className="font-medium">{cameraError}</p>
+                </div>
+              )}
 
               {!scanning ? (
                 <Button 
@@ -190,35 +209,61 @@ const Scanner = () => {
                   Escanear com Câmera
                 </Button>
               ) : (
-                <Button 
-                  className="w-full" 
-                  onClick={stopScanning}
-                  variant="destructive"
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Parar Scanner
-                </Button>
+                <div className="space-y-4">
+                  <div className="relative border-2 border-primary rounded-lg overflow-hidden bg-black">
+                    <video 
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-64 object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-48 h-48 border-2 border-white rounded-lg opacity-60"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1" 
+                      onClick={() => {
+                        // Simular leitura de QR code
+                        const simulatedCode = `QR-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+                        setQrCode(simulatedCode);
+                        handleSearch(simulatedCode);
+                      }}
+                      variant="secondary"
+                    >
+                      Simular QR Code
+                    </Button>
+                    
+                    <Button 
+                      className="flex-1" 
+                      onClick={stopScanning}
+                      variant="destructive"
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Parar Scanner
+                    </Button>
+                  </div>
+                  
+                  <p className="text-sm text-center text-muted-foreground">
+                    Aponte a câmera para o código QR da bombona
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {scanning && (
-            <Card className="shadow-card-eco">
-              <CardContent className="p-0">
-                <div id="qr-reader" className="w-full rounded-lg overflow-hidden"></div>
-              </CardContent>
-            </Card>
-          )}
-
           {bombona && (
-            <Card className="shadow-card-eco animate-slide-up">
+            <Card className="animate-in fade-in duration-500">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle>{bombona.name}</CardTitle>
                     <CardDescription>Código: {bombona.qr_code}</CardDescription>
                   </div>
-                  <Badge className={getStatusColor(bombona.status)}>
+                  <Badge variant={getStatusColor(bombona.status)}>
                     {getStatusLabel(bombona.status)}
                   </Badge>
                 </div>

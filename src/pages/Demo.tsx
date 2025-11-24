@@ -8,20 +8,46 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Scan, MapPin, Package, BarChart3, Leaf, CheckCircle2, ArrowLeft } from 'lucide-react';
 
+interface DemoAsset {
+  id: string;
+  name: string;
+  type: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  status: string;
+  lastWash: string;
+  cycles: number;
+  capacity: string;
+  material: string;
+  color: string;
+  history: Array<{
+    date: string;
+    action: string;
+    location: string;
+  }>;
+}
+
+interface ScanError {
+  error: string;
+}
+
+type ScanResult = DemoAsset | ScanError | null;
+
 const Demo = () => {
   const navigate = useNavigate();
   const [qrCode, setQrCode] = useState('');
-  const [scannedData, setScannedData] = useState<any>(null);
+  const [scannedData, setScannedData] = useState<ScanResult>(null);
 
-  const demoAsset = {
+  const demoAsset: DemoAsset = {
     id: 'BOM-DEMO-001',
     name: 'Bombona PEAD 200L Demo',
-    type: 'Química',
-    location: 'Centro de Demonstração - SP',
+    type: 'Quimica',
+    location: 'Centro de Demonstracao - SP',
     latitude: -23.5505,
     longitude: -46.6333,
     status: 'available',
-    lastWash: 'Há 2 horas',
+    lastWash: 'Ha 2 horas',
     cycles: 42,
     capacity: '200L',
     material: 'PEAD',
@@ -29,7 +55,7 @@ const Demo = () => {
     history: [
       { date: '2024-01-15', action: 'Lavagem Completa', location: 'Centro de Lavagem SP' },
       { date: '2024-01-10', action: 'Transporte', location: 'Em Rota SP-RJ' },
-      { date: '2024-01-05', action: 'Utilização', location: 'Cliente XYZ - RJ' },
+      { date: '2024-01-05', action: 'Utilizacao', location: 'Cliente XYZ - RJ' },
     ]
   };
 
@@ -37,8 +63,16 @@ const Demo = () => {
     if (qrCode.toLowerCase().includes('demo') || qrCode === 'BOM-DEMO-001') {
       setScannedData(demoAsset);
     } else {
-      setScannedData({ error: 'QR Code não encontrado. Tente: BOM-DEMO-001' });
+      setScannedData({ error: 'QR Code nao encontrado. Tente: BOM-DEMO-001' });
     }
+  };
+
+  const isDemoAsset = (data: ScanResult): data is DemoAsset => {
+    return data !== null && !('error' in data);
+  };
+
+  const isScanError = (data: ScanResult): data is ScanError => {
+    return data !== null && 'error' in data;
   };
 
   return (
@@ -56,7 +90,7 @@ const Demo = () => {
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Demonstração Interativa</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Demonstracao Interativa</h1>
           <p className="text-muted-foreground">Explore as funcionalidades do sistema de rastreamento</p>
         </div>
 
@@ -100,7 +134,7 @@ const Demo = () => {
                   </Button>
                 </div>
 
-                {scannedData && !scannedData.error && (
+                {isDemoAsset(scannedData) && (
                   <Card className="border-primary/20 bg-gradient-light">
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center justify-between">
@@ -110,7 +144,7 @@ const Demo = () => {
                         </div>
                         <Badge className="bg-success text-success-foreground">
                           <CheckCircle2 className="w-3 h-3 mr-1" />
-                          Disponível
+                          Disponivel
                         </Badge>
                       </div>
 
@@ -128,7 +162,7 @@ const Demo = () => {
                           <p className="font-semibold">{scannedData.cycles}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Última Lavagem</p>
+                          <p className="text-sm text-muted-foreground">Ultima Lavagem</p>
                           <p className="font-semibold">{scannedData.lastWash}</p>
                         </div>
                       </div>
@@ -148,7 +182,7 @@ const Demo = () => {
                   </Card>
                 )}
 
-                {scannedData?.error && (
+                {isScanError(scannedData) && (
                   <Card className="border-destructive/20 bg-destructive/5">
                     <CardContent className="pt-6">
                       <p className="text-destructive">{scannedData.error}</p>
@@ -163,7 +197,7 @@ const Demo = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Rastreamento em Tempo Real</CardTitle>
-                <CardDescription>Visualize a localização e status das bombonas</CardDescription>
+                <CardDescription>Visualize a localizacao e status das bombonas</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -186,14 +220,14 @@ const Demo = () => {
                       <CardContent className="pt-6 text-center">
                         <Package className="w-8 h-8 mx-auto text-success mb-2" />
                         <p className="text-2xl font-bold">127</p>
-                        <p className="text-sm text-muted-foreground">Em Trânsito</p>
+                        <p className="text-sm text-muted-foreground">Em Transito</p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="pt-6 text-center">
                         <MapPin className="w-8 h-8 mx-auto text-primary mb-2" />
                         <p className="text-2xl font-bold">43</p>
-                        <p className="text-sm text-muted-foreground">Localizações Ativas</p>
+                        <p className="text-sm text-muted-foreground">Localizacoes Ativas</p>
                       </CardContent>
                     </Card>
                     <Card>
@@ -213,7 +247,7 @@ const Demo = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Analytics e Insights</CardTitle>
-                <CardDescription>Análise detalhada de uso e eficiência</CardDescription>
+                <CardDescription>Analise detalhada de uso e eficiencia</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
@@ -239,7 +273,7 @@ const Demo = () => {
                     variant="outline"
                     onClick={() => navigate('/relatorios')}
                   >
-                    Ver Relatórios Completos
+                    Ver Relatorios Completos
                   </Button>
                 </div>
               </CardContent>
@@ -251,7 +285,7 @@ const Demo = () => {
               <CardHeader>
                 <CardTitle className="text-primary-foreground">Impacto Ambiental</CardTitle>
                 <CardDescription className="text-primary-foreground/80">
-                  Contribuição para um futuro sustentável
+                  Contribuicao para um futuro sustentavel
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -262,15 +296,15 @@ const Demo = () => {
                   </div>
                   <div className="text-center">
                     <div className="text-3xl font-bold text-primary-foreground mb-1">-42%</div>
-                    <div className="text-sm text-primary-foreground/80">Redução de CO₂</div>
+                    <div className="text-sm text-primary-foreground/80">Reducao de CO₂</div>
                   </div>
                   <div className="text-center">
                     <div className="text-3xl font-bold text-primary-foreground mb-1">328</div>
-                    <div className="text-sm text-primary-foreground/80">Árvores Preservadas</div>
+                    <div className="text-sm text-primary-foreground/80">Arvores Preservadas</div>
                   </div>
                   <div className="text-center">
                     <div className="text-3xl font-bold text-primary-foreground mb-1">98.5%</div>
-                    <div className="text-sm text-primary-foreground/80">Taxa de Reutilização</div>
+                    <div className="text-sm text-primary-foreground/80">Taxa de Reutilizacao</div>
                   </div>
                 </div>
               </CardContent>

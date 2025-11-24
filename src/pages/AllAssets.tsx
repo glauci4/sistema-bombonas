@@ -128,7 +128,7 @@ const AllAssets = () => {
           </p>
         </div>
 
-        {/* Filters */}
+        {/* Filtros */}
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -174,7 +174,7 @@ const AllAssets = () => {
           </CardContent>
         </Card>
 
-        {/* Assets Grid */}
+        {}
         {loading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Carregando...</p>

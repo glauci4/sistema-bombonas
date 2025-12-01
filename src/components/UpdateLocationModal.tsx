@@ -21,15 +21,23 @@ interface GeoapifyFeature {
     formatted: string;
     name?: string;
     street?: string;
+    road?: string;
     housenumber?: string;
     suburb?: string;
     district?: string;
     city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
     state?: string;
     postcode?: string;
     country?: string;
     address_line1?: string;
     address_line2?: string;
+    rank?: {
+      confidence: number;
+      match_type: string;
+    };
   };
   geometry: {
     coordinates: [number, number];
@@ -52,20 +60,6 @@ interface ViaCepResponse {
   ddd: string;
   siafi: string;
   erro?: boolean;
-}
-
-interface GeoapifyReverseResult {
-  results?: Array<{
-    road?: string;
-    housenumber?: string;
-    suburb?: string;
-    city?: string;
-    state?: string;
-    postcode?: string;
-    rank?: {
-      confidence: number;
-    };
-  }>;
 }
 
 const UpdateLocationModal = ({ 
@@ -181,7 +175,7 @@ const UpdateLocationModal = ({
     }
   };
 
-  // ✅ NOVA FUNÇÃO DE REVERSE GEOCODING COM VALIDAÇÃO DE CONFIANÇA
+  // ✅ FUNÇÃO REVISADA DE REVERSE GEOCODING - MAIS ROBUSTA
   const reverseGeocode = async (lat: number, lng: number): Promise<{
     street: string;
     number: string;
@@ -190,45 +184,86 @@ const UpdateLocationModal = ({
     state: string;
     postcode: string;
   } | null> => {
-    const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&format=json&limit=1&lang=pt&apiKey=${GEOAPIFY_API_KEY}`;
+    const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&apiKey=${GEOAPIFY_API_KEY}&format=json&limit=5&lang=pt&type=street`;
 
     try {
+      console.log("🔄 Buscando reverse geocode para:", { lat, lng });
+      
       const response = await fetch(url);
-      const data: GeoapifyReverseResult = await response.json();
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
 
-      console.log("Resposta Geoapify:", data);
+      const data: GeoapifyResponse = await response.json();
+      console.log("📨 Resposta completa da Geoapify:", JSON.stringify(data, null, 2));
 
-      if (!data || !data.results || data.results.length === 0) return null;
-
-      const result = data.results[0];
-
-      // Verifica confiança mínima (0 a 1) - com verificação segura
-      if (result.rank && result.rank.confidence < 0.6) {
-        console.warn("Endereço com baixa confiança, ignorado.");
+      if (!data.features || data.features.length === 0) {
+        console.warn("Nenhum endereço encontrado para essas coordenadas.");
         return null;
       }
 
-      // Precisamos ao menos de rua + cidade
-      if (!result.road || !result.city) {
-        console.warn("Endereço incompleto, ignorado.");
+      // Ordenar features por confiança (se disponível) e completude
+      const sortedFeatures = [...data.features].sort((a, b) => {
+        const aProps = a.properties;
+        const bProps = b.properties;
+        
+        // Pontuação baseada na qualidade dos dados
+        let aScore = 0;
+        let bScore = 0;
+
+        // Pontuar por confiança
+        if (aProps.rank?.confidence) aScore += aProps.rank.confidence * 10;
+        if (bProps.rank?.confidence) bScore += bProps.rank.confidence * 10;
+
+        // Pontuar por campos preenchidos
+        if (aProps.road || aProps.street) aScore += 5;
+        if (bProps.road || bProps.street) bScore += 5;
+        
+        if (aProps.housenumber) aScore += 2;
+        if (bProps.housenumber) bScore += 2;
+        
+        if (aProps.city || aProps.town || aProps.village) aScore += 3;
+        if (bProps.city || bProps.town || bProps.village) bScore += 3;
+
+        return bScore - aScore;
+      });
+
+      const bestFeature = sortedFeatures[0];
+      const props = bestFeature.properties;
+
+      console.log("🏠 Melhor endereço encontrado:", props);
+
+      // Determinar campos do endereço com fallbacks
+      const street = props.road || props.street || props.name || "";
+      const city = props.city || props.town || props.village || props.municipality || "";
+      
+      // Se não tem pelo menos rua e cidade, considerar inválido
+      if (!street || !city) {
+        console.warn("Endereço incompleto - falta rua ou cidade");
         return null;
+      }
+
+      // Verificar confiança mínima apenas se existir
+      if (props.rank && props.rank.confidence < 0.3) {
+        console.warn("Endereço com baixa confiança, mas vamos usar mesmo assim");
+        // Não retornamos null aqui, pois em áreas rurais a confiança pode ser baixa
       }
 
       return {
-        street: result.road || "",
-        number: result.housenumber || "",
-        district: result.suburb || "",
-        city: result.city || "",
-        state: result.state || "",
-        postcode: result.postcode || ""
+        street: street,
+        number: props.housenumber || "",
+        district: props.suburb || props.district || "",
+        city: city,
+        state: props.state || "",
+        postcode: props.postcode || ""
       };
-    } catch (e) {
-      console.error("Erro ao reverter coordenadas:", e);
+    } catch (error) {
+      console.error("❌ Erro no reverse geocoding:", error);
       return null;
     }
   };
 
-  // ✅ USAR LOCALIZAÇÃO ATUAL - VERSÃO SIMPLIFICADA COM VALIDAÇÃO DE CONFIANÇA
+  // ✅ USAR LOCALIZAÇÃO ATUAL - VERSÃO MELHORADA
   const handleUseCurrentLocation = async () => {
     if (!navigator.geolocation) {
       toast.error("Geolocalização não é suportada pelo seu navegador.");
@@ -243,7 +278,7 @@ const UpdateLocationModal = ({
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 15000,
+          timeout: 20000, // Aumentado para 20 segundos
           maximumAge: 0,
         });
       });
@@ -256,18 +291,30 @@ const UpdateLocationModal = ({
       const addressData = await reverseGeocode(lat, lng);
 
       if (!addressData) {
-        toast.error("Não foi possível encontrar um endereço confiável para essa localização.");
+        // Se não encontrar endereço, pelo menos preencher com a cidade e estado padrão
+        setFormData(prev => ({
+          ...prev,
+          street: prev.street || "",
+          number: prev.number || "",
+          district: prev.district || "",
+          city: prev.city || "Cianorte",
+          state: prev.state || "PR",
+          postcode: prev.postcode || ""
+        }));
+        
+        toast.warning("Endereço exato não encontrado. Complete os campos manualmente.");
         return;
       }
 
+      // Preencher os campos com os dados obtidos
       setFormData(prev => ({
         ...prev,
-        street: addressData.street,
-        number: addressData.number,
-        district: addressData.district,
-        city: addressData.city,
-        state: addressData.state,
-        postcode: addressData.postcode,
+        street: addressData.street || prev.street,
+        number: addressData.number || prev.number,
+        district: addressData.district || prev.district,
+        city: addressData.city || prev.city,
+        state: addressData.state || prev.state,
+        postcode: addressData.postcode || prev.postcode
       }));
 
       toast.success("Localização obtida com sucesso!");
@@ -278,17 +325,17 @@ const UpdateLocationModal = ({
       if (error instanceof GeolocationPositionError) {
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            toast.error("Permissão de localização negada.");
+            toast.error("Permissão de localização negada. Permita o acesso ao GPS.");
             break;
           case error.POSITION_UNAVAILABLE:
-            toast.error("Localização indisponível. Ative o GPS.");
+            toast.error("Localização indisponível. Verifique se o GPS está ativado.");
             break;
           case error.TIMEOUT:
-            toast.error("Tempo excedido. Tente novamente em área aberta.");
+            toast.error("Tempo de espera excedido. Tente novamente em área aberta.");
             break;
         }
       } else {
-        toast.error("Erro ao obter localização.");
+        toast.error("Erro ao obter localização. Tente novamente.");
       }
 
     } finally {
@@ -512,4 +559,3 @@ const UpdateLocationModal = ({
 };
 
 export default UpdateLocationModal;
-

@@ -22,32 +22,28 @@ const truckIcon = new L.Icon({
   iconAnchor: [12, 12],
 });
 
-interface BombonaLocation {
-  id: string;
-  name: string;
-  status: string;
-  location_address: string | null;
-  location_lat: number | null;
-  location_lng: number | null;
-}
-
-interface DespachoLocation {
-  id: string;
-  bombona_id: string;
-  destino: string;
-  endereco: string;
-  latitude: number;
-  longitude: number;
-  data_despacho: string;
-  responsavel: string;
-  status: string;
-  bombona_nome: string;
-  bombona_status: string;
-}
-
 interface InteractiveMapProps {
-  bombonas: BombonaLocation[];
-  despachos?: DespachoLocation[];
+  bombonas: Array<{
+    id: string;
+    name: string;
+    status: string;
+    location_address: string | null;
+    location_lat: number | null;
+    location_lng: number | null;
+  }>;
+  despachos?: Array<{
+    id: string;
+    bombona_id: string;
+    destino: string;
+    endereco: string;
+    latitude: number;
+    longitude: number;
+    data_despacho: string;
+    responsavel: string;
+    status: string;
+    bombona_nome: string;
+    bombona_status: string;
+  }>;
 }
 
 const InteractiveMap = ({ bombonas, despachos = [] }: InteractiveMapProps) => {
@@ -70,13 +66,18 @@ const InteractiveMap = ({ bombonas, despachos = [] }: InteractiveMapProps) => {
   };
 
   const validBombonas = bombonas.filter(
-    (bombona): bombona is BombonaLocation & { location_lat: number; location_lng: number } => 
-      bombona.location_lat !== null && bombona.location_lng !== null
-  );
+    (bombona) => bombona.location_lat !== null && bombona.location_lng !== null
+  ) as Array<{
+    id: string;
+    name: string;
+    status: string;
+    location_address: string | null;
+    location_lat: number;
+    location_lng: number;
+  }>;
 
   const validDespachos = despachos.filter(
-    (despacho): despacho is DespachoLocation => 
-      despacho.latitude !== null && despacho.longitude !== null
+    (despacho) => despacho.latitude !== null && despacho.longitude !== null
   );
 
   return (

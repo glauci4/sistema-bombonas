@@ -20,8 +20,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔍 AuthProvider montado');
+    
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('📋 Sessão recuperada:', session?.user?.email);
+      console.log('❌ Erro na sessão:', error);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -30,7 +34,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
+        console.log('🔄 Auth state changed:', _event);
+        console.log('👤 Novo usuário:', session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);

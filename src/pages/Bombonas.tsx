@@ -1,94 +1,118 @@
-import { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Package, MapPin, Download, Edit, Trash2, Send } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import QRCode from 'qrcode';
-import { useNavigate } from 'react-router-dom';
-import { Bombona, BombonaStatus } from '@/services/types';
-import { bombonaService } from '@/services/bombonaService';
+import { useState, useEffect } from 'react'; 
+import Navbar from '@/components/Navbar'; 
+import { Button } from '@/components/ui/button'; 
+import { Input } from '@/components/ui/input'; 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; 
+import { Badge } from '@/components/ui/badge'; 
+import { Plus, Search, Package, MapPin, Download, Edit, Trash2, Send } from 'lucide-react'; 
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'; 
+import { Label } from '@/components/ui/label'; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; 
+import { toast } from 'sonner'; 
+import QRCode from 'qrcode'; 
+import { useNavigate } from 'react-router-dom'; 
+import { Bombona, BombonaStatus } from '@/services/types'; 
+import { bombonaService } from '@/services/bombonaService'; 
 import DespachoForm from '@/components/DespachoForm';
 
-const Bombonas = () => {
-  const [bombonas, setBombonas] = useState<Bombona[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const [selectedBombonaForDespacho, setSelectedBombonaForDespacho] = useState<Bombona | null>(null);
-  const [isDespachoDialogOpen, setIsDespachoDialogOpen] = useState(false);
+const Bombonas = () => { 
+  const [bombonas, setBombonas] = useState<Bombona[]>([]); 
+  const [searchTerm, setSearchTerm] = useState(''); 
+  const [loading, setLoading] = useState(true); 
+  const [isDialogOpen, setIsDialogOpen] = useState(false); 
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>(''); 
+  const [selectedBombonaForDespacho, setSelectedBombonaForDespacho] = useState<Bombona | null>(null); 
+  const [isDespachoDialogOpen, setIsDespachoDialogOpen] = useState(false); 
   const navigate = useNavigate();
-  
-  const [newBombona, setNewBombona] = useState({
-    name: '',
-    qr_code: '',
-    capacity: 50,
-    material: 'PEAD',
-    type: 'bombona',
-    color: '',
-    status: 'available' as BombonaStatus
+
+  const [newBombona, setNewBombona] = useState({ 
+    name: '', 
+    qr_code: '', 
+    capacity: 50, 
+    material: 'PEAD', 
+    type: 'bombona', 
+    color: '', 
+    status: 'available' as BombonaStatus 
   });
 
-  useEffect(() => {
-    fetchBombonas();
+  useEffect(() => { 
+    fetchBombonas(); 
   }, []);
 
-  const fetchBombonas = async () => {
-    try {
-      const bombonasData = await bombonaService.fetchBombonas();
-      setBombonas(bombonasData);
-    } catch (error) {
-      console.error('Erro ao carregar bombonas:', error);
-      toast.error('Erro ao carregar bombonas');
-    } finally {
-      setLoading(false);
-    }
+  const fetchBombonas = async () => { 
+    try { 
+      const bombonasData = await bombonaService.fetchBombonas(); 
+      setBombonas(bombonasData); 
+    } catch (error) { 
+      console.error('Erro ao carregar bombonas:', error); 
+      toast.error('Erro ao carregar bombonas'); 
+    } finally { 
+      setLoading(false); 
+    } 
   };
 
-  const generateQRCode = async (text: string) => {
-    if (!text.trim()) {
+  const generateQRCode = async () => {
+    const qrText = newBombona.qr_code.trim();
+    
+    if (!qrText) {
       toast.error('Digite um código QR primeiro');
       return;
     }
+    
     try {
-      const url = await QRCode.toDataURL(text, {
+      const url = await QRCode.toDataURL(qrText, {
         width: 300,
         margin: 2,
         color: {
           dark: '#22c55e',
           light: '#ffffff'
-        }
+        },
+        errorCorrectionLevel: 'H'
       });
+      
       setQrCodeUrl(url);
-      toast.success('QR Code gerado!');
+      toast.success('QR Code gerado com sucesso!');
+      
     } catch (error) {
       console.error('Erro ao gerar QR Code:', error);
-      toast.error('Erro ao gerar QR Code');
+      
+      try {
+        const canvas = document.createElement('canvas');
+        await QRCode.toCanvas(canvas, qrText, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#22c55e',
+            light: '#ffffff'
+          }
+        });
+        
+        const url = canvas.toDataURL('image/png');
+        setQrCodeUrl(url);
+        toast.success('QR Code gerado (método alternativo)!');
+      } catch (secondError) {
+        console.error('Método alternativo também falhou:', secondError);
+        toast.error('Falha ao gerar QR Code. Verifique o console.');
+      }
     }
   };
 
-  const downloadQRCode = () => {
-    if (qrCodeUrl) {
-      const link = document.createElement('a');
-      link.download = `qrcode-${newBombona.qr_code}.png`;
-      link.href = qrCodeUrl;
-      link.click();
-      toast.success('QR Code baixado!');
-    }
+  const downloadQRCode = () => { 
+    if (qrCodeUrl) { 
+      const link = document.createElement('a'); 
+      link.download = `qrcode-${newBombona.qr_code}.png`; 
+      link.href = qrCodeUrl; 
+      link.click(); 
+      toast.success('QR Code baixado!'); 
+    } 
   };
 
-  const handleCreateBombona = async (e: React.FormEvent) => {
+  const handleCreateBombona = async (e: React.FormEvent) => { 
     e.preventDefault();
-    
+
     try {
       const bombona = await bombonaService.createBombona(newBombona);
-      
+
       if (bombona) {
         toast.success('Bombona cadastrada com sucesso!');
         setIsDialogOpen(false);
@@ -114,48 +138,46 @@ const Bombonas = () => {
     }
   };
 
-  const updateBombonaStatus = async (bombonaId: string, newStatus: BombonaStatus) => {
-    try {
-      const updatedBombona = await bombonaService.updateBombonaStatus(bombonaId, newStatus);
-      if (updatedBombona) {
-        setBombonas(prev => prev.map(b => 
-          b.id === bombonaId ? { ...b, status: newStatus } : b
-        ));
-        toast.success('Status atualizado com sucesso!');
-      }
-    } catch (error: unknown) {
-      console.error('Erro ao atualizar status:', error);
-      toast.error('Erro ao atualizar status');
-    }
+  const updateBombonaStatus = async (bombonaId: string, newStatus: BombonaStatus) => { 
+    try { 
+      const updatedBombona = await bombonaService.updateBombonaStatus(bombonaId, newStatus); 
+      if (updatedBombona) { 
+        setBombonas(prev => prev.map(b => b.id === bombonaId ? { ...b, status: newStatus } : b )); 
+        toast.success('Status atualizado com sucesso!'); 
+      } 
+    } catch (error: unknown) { 
+      console.error('Erro ao atualizar status:', error); 
+      toast.error('Erro ao atualizar status'); 
+    } 
   };
 
-  const handleDeleteBombona = async (bombonaId: string) => {
-    try {
-      const success = await bombonaService.deleteBombona(bombonaId);
-      if (success) {
-        fetchBombonas();
-        toast.success('Bombona excluída com sucesso!');
-      }
-    } catch (error: unknown) {
-      console.error('Erro ao excluir bombona:', error);
-      toast.error('Erro ao excluir bombona');
-    }
+  const handleDeleteBombona = async (bombonaId: string) => { 
+    try { 
+      const success = await bombonaService.deleteBombona(bombonaId); 
+      if (success) { 
+        fetchBombonas(); 
+        toast.success('Bombona excluída com sucesso!'); 
+      } 
+    } catch (error: unknown) { 
+      console.error('Erro ao excluir bombona:', error); 
+      toast.error('Erro ao excluir bombona'); 
+    } 
   };
 
-  const handleDespachoClick = (bombona: Bombona) => {
-    setSelectedBombonaForDespacho(bombona);
-    setIsDespachoDialogOpen(true);
+  const handleDespachoClick = (bombona: Bombona) => { 
+    setSelectedBombonaForDespacho(bombona); 
+    setIsDespachoDialogOpen(true); 
   };
 
-  const handleDespachoCreated = async () => {
-    setIsDespachoDialogOpen(false);
+  const handleDespachoCreated = async () => { 
+    setIsDespachoDialogOpen(false); 
     setSelectedBombonaForDespacho(null);
-    
+
     try {
       if (selectedBombonaForDespacho) {
         await bombonaService.updateBombonaStatus(selectedBombonaForDespacho.id, 'in_use');
       }
-      
+
       fetchBombonas();
       toast.success('Despacho criado com sucesso! A bombona foi marcada como "Em Uso".');
     } catch (error) {
@@ -164,44 +186,44 @@ const Bombonas = () => {
     }
   };
 
-  const getStatusColor = (status: BombonaStatus) => {
-    const colors: Record<BombonaStatus, string> = {
-      available: 'bg-green-100 text-green-800 border-green-200',
-      in_use: 'bg-blue-100 text-blue-800 border-blue-200',
-      maintenance: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      washing: 'bg-purple-100 text-purple-800 border-purple-200',
-      lost: 'bg-red-100 text-red-800 border-red-200'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+  const getStatusColor = (status: BombonaStatus) => { 
+    const colors: Record<BombonaStatus, string> = { 
+      available: 'bg-green-100 text-green-800 border-green-200', 
+      in_use: 'bg-blue-100 text-blue-800 border-blue-200', 
+      maintenance: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
+      washing: 'bg-purple-100 text-purple-800 border-purple-200', 
+      lost: 'bg-red-100 text-red-800 border-red-200' 
+    }; 
+    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200'; 
   };
 
-  const getStatusLabel = (status: BombonaStatus) => {
-    const labels: Record<BombonaStatus, string> = {
-      available: 'Disponível',
-      in_use: 'Em Uso',
-      maintenance: 'Manutenção',
-      washing: 'Lavagem',
-      lost: 'Extraviada'
-    };
-    return labels[status] || status;
+  const getStatusLabel = (status: BombonaStatus) => { 
+    const labels: Record<BombonaStatus, string> = { 
+      available: 'Disponível', 
+      in_use: 'Em Uso', 
+      maintenance: 'Manutenção', 
+      washing: 'Lavagem', 
+      lost: 'Extraviada' 
+    }; 
+    return labels[status] || status; 
   };
 
-  const filteredBombonas = bombonas.filter(b =>
-    b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.qr_code.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBombonas = bombonas.filter(b => 
+    b.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    b.qr_code.toLowerCase().includes(searchTerm.toLowerCase()) 
   );
 
-  return (
-    <div className="min-h-screen bg-background">
+  return ( 
+    <div className="min-h-screen bg-background"> 
       <Navbar />
-      
+
       <main className="container mx-auto px-4 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Gestão de Bombonas</h1>
             <p className="text-muted-foreground">Cadastre e gerencie suas bombonas</p>
           </div>
-          
+
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -214,7 +236,7 @@ const Bombonas = () => {
                 <DialogTitle>Cadastrar Nova Bombona</DialogTitle>
                 <DialogDescription>Preencha os dados da nova bombona</DialogDescription>
               </DialogHeader>
-              
+
               <form onSubmit={handleCreateBombona} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome/Identificação</Label>
@@ -233,32 +255,76 @@ const Bombonas = () => {
                     <Input
                       id="qr_code"
                       value={newBombona.qr_code}
-                      onChange={(e) => setNewBombona({...newBombona, qr_code: e.target.value})}
+                      onChange={(e) => {
+                        setNewBombona({...newBombona, qr_code: e.target.value});
+                        if (qrCodeUrl) setQrCodeUrl('');
+                      }}
                       placeholder="Ex: QR-2024-001"
                       required
                     />
                     <Button 
                       type="button" 
-                      onClick={() => generateQRCode(newBombona.qr_code)}
-                      disabled={!newBombona.qr_code}
+                      onClick={generateQRCode}
+                      disabled={!newBombona.qr_code.trim()}
+                      className="bg-green-600 hover:bg-green-700 text-white"
                     >
                       Gerar QR
                     </Button>
                   </div>
-                  {qrCodeUrl && (
+                  
+                  <div className="mt-2">
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        const testCode = `QR-TEST-${Date.now().toString().slice(-6)}`;
+                        setNewBombona({...newBombona, qr_code: testCode});
+                        setTimeout(() => generateQRCode(), 100);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs"
+                    >
+                      🧪 Testar com Código Automático
+                    </Button>
+                  </div>
+                  
+                  {qrCodeUrl ? (
                     <div className="mt-4 p-4 border rounded-lg bg-muted/20">
-                      <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48 mx-auto" />
-                      <Button 
-                        type="button" 
-                        onClick={downloadQRCode}
-                        className="w-full mt-2"
-                        variant="outline"
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Baixar QR Code
-                      </Button>
+                      <p className="text-sm text-muted-foreground mb-2 text-center">
+                        QR Code gerado para: <strong>{newBombona.qr_code}</strong>
+                      </p>
+                      <img 
+                        src={qrCodeUrl} 
+                        alt={`QR Code ${newBombona.qr_code}`} 
+                        className="w-48 h-48 mx-auto border rounded"
+                      />
+                      <div className="flex gap-2 mt-3">
+                        <Button 
+                          type="button" 
+                          onClick={downloadQRCode}
+                          className="flex-1"
+                          variant="outline"
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Baixar
+                        </Button>
+                        <Button 
+                          type="button" 
+                          onClick={() => setQrCodeUrl('')}
+                          className="flex-1"
+                          variant="ghost"
+                        >
+                          Limpar
+                        </Button>
+                      </div>
                     </div>
-                  )}
+                  ) : newBombona.qr_code.trim() ? (
+                    <div className="mt-2 p-3 border border-dashed rounded text-center">
+                      <p className="text-sm text-muted-foreground">
+                        Clique em "Gerar QR" para criar o código
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
@@ -267,7 +333,7 @@ const Bombonas = () => {
                     id="capacity"
                     type="number"
                     value={newBombona.capacity}
-                    onChange={(e) => setNewBombona({...newBombona, capacity: parseInt(e.target.value)})}
+                    onChange={(e) => setNewBombona({...newBombona, capacity: parseInt(e.target.value) || 50})}
                     required
                   />
                 </div>
@@ -350,7 +416,7 @@ const Bombonas = () => {
                     <span className="text-muted-foreground">QR:</span>
                     <span className="font-mono">{bombona.qr_code}</span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">Capacidade:</span>
@@ -362,7 +428,6 @@ const Bombonas = () => {
                     </div>
                   </div>
 
-                  {/* Seletor de Status */}
                   <div className="space-y-2">
                     <Label htmlFor={`status-${bombona.id}`} className="text-xs">Alterar Status</Label>
                     <Select 
@@ -394,7 +459,6 @@ const Bombonas = () => {
                       Ciclos: {bombona.total_cycles || 0}
                     </span>
                     <div className="flex gap-2">
-                      {/* BOTÃO DE DESPACHO - Mostra para bombonas que não estão extraviadas ou em manutenção */}
                       {bombona.status !== 'lost' && bombona.status !== 'maintenance' && (
                         <Button
                           variant="ghost"
@@ -432,7 +496,6 @@ const Bombonas = () => {
           </div>
         )}
 
-        {/* Dialog para Despacho */}
         <Dialog open={isDespachoDialogOpen} onOpenChange={setIsDespachoDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -451,7 +514,7 @@ const Bombonas = () => {
         </Dialog>
       </main>
     </div>
-  );
-};
+  ); 
+}; 
 
 export default Bombonas;

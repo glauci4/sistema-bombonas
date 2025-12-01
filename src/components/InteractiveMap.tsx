@@ -46,11 +46,11 @@ interface DespachoLocation {
 }
 
 interface InteractiveMapProps {
-  locations: BombonaLocation[];
+  bombonas: BombonaLocation[];
   despachos?: DespachoLocation[];
 }
 
-const InteractiveMap = ({ locations, despachos = [] }: InteractiveMapProps) => {
+const InteractiveMap = ({ bombonas, despachos = [] }: InteractiveMapProps) => {
   const mapRef = useRef<L.Map | null>(null);
 
   const defaultCenter: [number, number] = [-23.5505, -46.6333];
@@ -69,14 +69,14 @@ const InteractiveMap = ({ locations, despachos = [] }: InteractiveMapProps) => {
     return labels[status] || status;
   };
 
-  const validLocations = locations.filter(
-    (loc): loc is BombonaLocation & { location_lat: number; location_lng: number } => 
-      loc.location_lat !== null && loc.location_lng !== null
+  const validBombonas = bombonas.filter(
+    (bombona): bombona is BombonaLocation & { location_lat: number; location_lng: number } => 
+      bombona.location_lat !== null && bombona.location_lng !== null
   );
 
   const validDespachos = despachos.filter(
-    (desp): desp is DespachoLocation => 
-      desp.latitude !== null && desp.longitude !== null
+    (despacho): despacho is DespachoLocation => 
+      despacho.latitude !== null && despacho.longitude !== null
   );
 
   return (
@@ -93,19 +93,19 @@ const InteractiveMap = ({ locations, despachos = [] }: InteractiveMapProps) => {
         />
         
         {/* Bombona markers */}
-        {validLocations.map((location) => (
+        {validBombonas.map((bombona) => (
           <Marker
-            key={`bombona-${location.id}`}
-            position={[location.location_lat, location.location_lng]}
+            key={`bombona-${bombona.id}`}
+            position={[bombona.location_lat, bombona.location_lng]}
             icon={bombonaIcon}
           >
             <Popup>
               <div className="text-sm min-w-[200px]">
-                <div className="font-bold text-base mb-2">Bombona: {location.name}</div>
+                <div className="font-bold text-base mb-2">Bombona: {bombona.name}</div>
                 <div className="space-y-1">
-                  <div><strong>Status:</strong> {getStatusLabel(location.status)}</div>
-                  <div><strong>Endereço:</strong> {location.location_address || 'Não informado'}</div>
-                  <div><strong>Coordenadas:</strong> {location.location_lat.toFixed(4)}, {location.location_lng.toFixed(4)}</div>
+                  <div><strong>Status:</strong> {getStatusLabel(bombona.status)}</div>
+                  <div><strong>Endereço:</strong> {bombona.location_address || 'Não informado'}</div>
+                  <div><strong>Coordenadas:</strong> {bombona.location_lat.toFixed(4)}, {bombona.location_lng.toFixed(4)}</div>
                 </div>
               </div>
             </Popup>

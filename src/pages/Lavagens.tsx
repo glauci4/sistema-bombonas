@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { lavagemService } from '@/services/lavagemService';
 import LavagemForm from '@/components/LavagemForm';
 
 const Lavagens = () => {
+  const navigate = useNavigate();
   const [lavagens, setLavagens] = useState<LavagemWithBombona[]>([]);
   const [stats, setStats] = useState<LavagemStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,7 @@ const Lavagens = () => {
       setStats(statsData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados das lavagens');
     } finally {
       setLoading(false);
     }
@@ -52,6 +55,7 @@ const Lavagens = () => {
       setLavagens(lavagensFiltradas);
     } catch (error) {
       console.error('Erro ao filtrar lavagens:', error);
+      toast.error('Erro ao filtrar lavagens');
     } finally {
       setLoading(false);
     }
@@ -72,19 +76,34 @@ const Lavagens = () => {
     }
 
     try {
-      const success = await lavagemService.deleteLavagem(lavagemId);
-      if (success) {
-        toast.success('Lavagem excluída com sucesso!');
-        fetchData();
-      }
-    } catch (error) {
+      await lavagemService.deleteLavagem(lavagemId);
+      toast.success('Lavagem excluída com sucesso!');
+      fetchData();
+    } catch (error: unknown) {
       console.error('Erro ao excluir lavagem:', error);
+      
+      // Tratamento seguro do erro
+      let errorMessage = 'Erro ao excluir lavagem';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = String(error.message);
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
   const handleLavagemCriada = () => {
     setIsDialogOpen(false);
     fetchData();
+  };
+
+  const handleVerDetalhes = (lavagemId: string) => {
+    console.log('Navegando para detalhes da lavagem:', lavagemId);
+    navigate(`/lavagens/details/${lavagemId}`);
   };
 
   const filteredLavagens = lavagens.filter(lavagem =>
@@ -360,7 +379,7 @@ const Lavagens = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {/* Navegar para detalhes */}}
+                        onClick={() => handleVerDetalhes(lavagem.id)}
                         className="flex items-center gap-2"
                       >
                         <Eye className="w-4 h-4" />

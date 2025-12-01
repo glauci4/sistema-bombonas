@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Leaf, Menu, Bell, User, LogOut, QrCode, Map, FileText, Package, Truck, Droplet } from "lucide-react";
+import { Leaf, Menu, Bell, User, LogOut, QrCode, Map, FileText, Package, Truck, Droplets } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ interface Notification {
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // USE navigate DIRETAMENTE
   const location = useLocation();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -37,6 +37,24 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
+
+  // FUNÇÃO DE NAVEGAÇÃO SEGURA
+  const safeNavigate = (path: string | number) => {
+    try {
+      if (typeof path === 'number') {
+        if (window.history.length > 1) {
+          navigate(path);
+        } else {
+          navigate('/');
+        }
+      } else {
+        navigate(path);
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      navigate('/');
+    }
+  };
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
@@ -61,7 +79,6 @@ const Navbar = () => {
     }
   }, [user]);
 
- 
   const markAsRead = async (notificationId: string) => {
     try {
       const { error } = await supabase
@@ -82,7 +99,6 @@ const Navbar = () => {
       console.error('Erro ao marcar notificação como lida:', error);
     }
   };
-
 
   const markAllAsRead = async () => {
     if (!user || unreadCount === 0) return;
@@ -155,11 +171,17 @@ const Navbar = () => {
     { name: 'Visão Geral', path: '/', icon: null },
     { name: 'Bombonas', path: '/bombonas', icon: Package },
     { name: 'Despachos', path: '/despachos', icon: Truck },
-    { name: 'Lavagens', path: '/lavagens', icon: Droplet },
+    { name: 'Lavagens', path: '/lavagens', icon: Droplets },
     { name: 'Scanner', path: '/scanner', icon: QrCode },
     { name: 'Mapa', path: '/mapa', icon: Map },
     { name: 'Relatórios', path: '/relatorios', icon: FileText },
   ];
+
+  // Função de navegação para o Navbar
+  const handleNavigation = (path: string) => {
+    safeNavigate(path);
+    setMobileMenuOpen(false);
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border shadow-card-eco">
@@ -167,11 +189,11 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => handleNavigation('/')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-eco flex items-center justify-center shadow-eco">
-              <Leaf className="w-6 h-6 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center shadow-lg">
+              <Leaf className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">BonnaTech</h1>
@@ -179,23 +201,27 @@ const Navbar = () => {
             </div>
           </button>
 
-          {}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             {navigationItems.map((item) => (
               <Button 
                 key={item.path}
                 variant="ghost" 
-                className={isActive(item.path) ? "text-primary" : "text-foreground hover:text-primary"}
-                onClick={() => navigate(item.path)}
+                className={`${
+                  isActive(item.path) 
+                    ? "text-primary bg-primary/10" 
+                    : "text-foreground hover:text-primary hover:bg-accent"
+                } transition-colors`}
+                onClick={() => handleNavigation(item.path)}
               >
                 {item.name}
               </Button>
             ))}
           </div>
 
-          {}
+          {/* User Menu */}
           <div className="flex items-center gap-2">
-            {}
+            {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
@@ -251,7 +277,7 @@ const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {}
+            {/* User Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -266,27 +292,27 @@ const Navbar = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/bombonas')}>
+                <DropdownMenuItem onClick={() => handleNavigation('/bombonas')}>
                   <Package className="w-4 h-4 mr-2" />
                   Bombonas
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/despachos')}>
+                <DropdownMenuItem onClick={() => handleNavigation('/despachos')}>
                   <Truck className="w-4 h-4 mr-2" />
                   Despachos
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/lavagens')}>
-                  <Droplet className="w-4 h-4 mr-2" />
+                <DropdownMenuItem onClick={() => handleNavigation('/lavagens')}>
+                  <Droplets className="w-4 h-4 mr-2" />
                   Lavagens
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/scanner')}>
+                <DropdownMenuItem onClick={() => handleNavigation('/scanner')}>
                   <QrCode className="w-4 h-4 mr-2" />
                   Scanner
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/mapa')}>
+                <DropdownMenuItem onClick={() => handleNavigation('/mapa')}>
                   <Map className="w-4 h-4 mr-2" />
                   Mapa
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/relatorios')}>
+                <DropdownMenuItem onClick={() => handleNavigation('/relatorios')}>
                   <FileText className="w-4 h-4 mr-2" />
                   Relatórios
                 </DropdownMenuItem>
@@ -298,7 +324,7 @@ const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {}
+            {/* Mobile Menu Button */}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -310,7 +336,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {}
+        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 right-0 bg-card border-b border-border shadow-lg">
             <div className="px-4 py-2 space-y-1">
@@ -321,10 +347,7 @@ const Navbar = () => {
                   className={`w-full justify-start ${
                     isActive(item.path) ? "text-primary bg-primary/10" : "text-foreground"
                   }`}
-                  onClick={() => {
-                    navigate(item.path);
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={() => handleNavigation(item.path)}
                 >
                   {item.name}
                 </Button>

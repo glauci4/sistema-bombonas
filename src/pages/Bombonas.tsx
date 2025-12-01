@@ -1,7 +1,5 @@
-// src/pages/Bombonas.tsx
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -154,12 +152,11 @@ const Bombonas = () => {
     setSelectedBombonaForDespacho(null);
     
     try {
-      // Atualizar status da bombona para "in_use" automaticamente
       if (selectedBombonaForDespacho) {
         await bombonaService.updateBombonaStatus(selectedBombonaForDespacho.id, 'in_use');
       }
       
-      fetchBombonas(); // Atualiza a listagem
+      fetchBombonas();
       toast.success('Despacho criado com sucesso! A bombona foi marcada como "Em Uso".');
     } catch (error) {
       console.error('Erro ao atualizar status da bombona:', error);
@@ -397,8 +394,8 @@ const Bombonas = () => {
                       Ciclos: {bombona.total_cycles || 0}
                     </span>
                     <div className="flex gap-2">
-                      {/* BOTÃO DE DESPACHO - Só mostra se a bombona estiver disponível */}
-                      {bombona.status === 'available' && (
+                      {/* BOTÃO DE DESPACHO - Mostra para bombonas que não estão extraviadas ou em manutenção */}
+                      {bombona.status !== 'lost' && bombona.status !== 'maintenance' && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -412,9 +409,9 @@ const Bombonas = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => navigate(`/bombonas/details/${bombona.id}`)}
+                        onClick={() => navigate(`/bombonas/edit/${bombona.id}`)}
                         className="h-8 w-8 p-0"
-                        title="Detalhes"
+                        title="Editar"
                       >
                         <Edit className="w-3 h-3" />
                       </Button>

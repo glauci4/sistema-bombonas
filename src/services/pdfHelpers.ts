@@ -1,5 +1,11 @@
+// src/services/pdfHelpers.ts
 import { jsPDF } from 'jspdf';
 import { COLORS, TYPOGRAPHY, SPACING, DIMENSIONS, MESES } from './constants';
+
+// Interface para dados da tabela
+interface TableData {
+  [key: string]: string | number;
+}
 
 export class PDFHelpers {
   // ===== CABEÇALHO =====
@@ -417,7 +423,7 @@ export class PDFHelpers {
     y: number,
     width: number,
     colunas: Array<{ header: string; width: number; key: string }>,
-    dados: any[]
+    dados: TableData[]
   ): number {
     let currentY = y;
     

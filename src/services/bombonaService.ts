@@ -1,6 +1,6 @@
 // src/services/bombonaService.ts
 import { supabase } from '@/integrations/supabase/client';
-import { Bombona, NewBombona, UpdateBombona, BombonaStats, BombonaStatus, BombonaFromDB, convertBombonaFromDB } from './types';
+import { Bombona, NewBombona, UpdateBombona, BombonaStats, BombonaStatus, convertBombonaFromDB } from './types';
 
 export const bombonaService = {
   async fetchBombonas(): Promise<Bombona[]> {

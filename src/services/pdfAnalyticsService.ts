@@ -23,64 +23,76 @@ export interface YearlyPDFData {
   period: string;
 }
 
-// Cores da paleta BonnaTech
+// Cores profissionais atualizadas
 const BRAND_COLORS = {
-  primary: [34, 197, 94] as [number, number, number],
-  secondary: [59, 130, 246] as [number, number, number],
+  primary: [59, 130, 246] as [number, number, number], // Azul profissional
+  secondary: [16, 185, 129] as [number, number, number], // Verde suave
   accent: [139, 92, 246] as [number, number, number],
   success: [16, 185, 129] as [number, number, number],
   warning: [245, 158, 11] as [number, number, number],
-  error: [239, 68, 68] as [number, number, number]
+  error: [239, 68, 68] as [number, number, number],
+  dark: [31, 41, 55] as [number, number, number], // Cinza escuro
+  light: [249, 250, 251] as [number, number, number] // Cinza claro
 };
 
 const COMPANY_NAME = 'BonnaTech';
 
-// Funções auxiliares
+// Funções auxiliares atualizadas
 const addCoverPage = (pdf: jsPDF, title: string, generatedAt: string, period?: string) => {
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   
-  // Fundo gradiente
-  pdf.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+  // Fundo profissional - gradiente azul suave
+  pdf.setFillColor(BRAND_COLORS.light[0], BRAND_COLORS.light[1], BRAND_COLORS.light[2]);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+  
+  // Header com azul profissional
+  pdf.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+  pdf.rect(0, 0, pageWidth, 120, 'F');
   
   // Logo/Título
   pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(32);
+  pdf.setFontSize(28);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(COMPANY_NAME, pageWidth / 2, 80, { align: 'center' });
+  pdf.text(COMPANY_NAME, pageWidth / 2, 60, { align: 'center' });
   
-  pdf.setFontSize(24);
-  pdf.text(title, pageWidth / 2, 120, { align: 'center' });
+  pdf.setFontSize(20);
+  pdf.text(title, pageWidth / 2, 80, { align: 'center' });
   
   if (period) {
-    pdf.setFontSize(16);
-    pdf.text(period, pageWidth / 2, 140, { align: 'center' });
+    pdf.setFontSize(14);
+    pdf.text(period, pageWidth / 2, 100, { align: 'center' });
   }
   
-  pdf.setFontSize(12);
-  pdf.text(`Gerado em: ${generatedAt}`, pageWidth / 2, pageHeight - 50, { align: 'center' });
+  // Informações de geração
+  pdf.setFontSize(11);
+  pdf.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
+  pdf.text(`Gerado em: ${generatedAt}`, pageWidth / 2, pageHeight - 40, { align: 'center' });
   
   // Rodapé
   pdf.setFontSize(10);
-  pdf.text('Sistema de Gestão de Bombonas Sustentáveis', pageWidth / 2, pageHeight - 30, { align: 'center' });
+  pdf.text('Sistema de Gestão de Bombonas Sustentáveis', pageWidth / 2, pageHeight - 25, { align: 'center' });
 };
 
 const addHeader = (pdf: jsPDF, title: string) => {
   const pageWidth = pdf.internal.pageSize.getWidth();
   
+  // Header moderno com borda inferior
   pdf.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-  pdf.rect(20, 20, pageWidth - 40, 15, 'F');
+  pdf.rect(20, 20, pageWidth - 40, 12, 'F');
   
   pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(14);
+  pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(title, pageWidth / 2, 30, { align: 'center' });
+  pdf.text(title, pageWidth / 2, 27, { align: 'center' });
   
-  pdf.setTextColor(0, 0, 0);
+  pdf.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
 };
 
 const addMetricRow = (pdf: jsPDF, label: string, value: string, y: number) => {
+  pdf.setFontSize(10);
+  pdf.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
+  pdf.setFont('helvetica', 'normal');
   pdf.text(`${label}:`, 25, y);
   pdf.setFont('helvetica', 'bold');
   pdf.text(value, 120, y);
@@ -88,25 +100,28 @@ const addMetricRow = (pdf: jsPDF, label: string, value: string, y: number) => {
 };
 
 const addKPIBox = (pdf: jsPDF, label: string, value: string, x: number, y: number) => {
-  const boxWidth = 70;
-  const boxHeight = 25;
+  const boxWidth = 75;
+  const boxHeight = 28;
   
-  // Caixa de fundo
-  pdf.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2], 0.1);
+  // Caixa com sombra sutil e borda azul
+  pdf.setFillColor(255, 255, 255);
   pdf.rect(x, y, boxWidth, boxHeight, 'F');
   
-  // Borda
+  // Borda azul
   pdf.setDrawColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+  pdf.setLineWidth(0.5);
   pdf.rect(x, y, boxWidth, boxHeight);
   
-  // Texto
+  // Texto do label
   pdf.setFontSize(9);
-  pdf.setTextColor(0, 0, 0);
+  pdf.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
   pdf.text(label, x + 5, y + 8);
   
+  // Valor
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(value, x + 5, y + 18);
+  pdf.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+  pdf.text(value, x + 5, y + 20);
   
   pdf.setFont('helvetica', 'normal');
 };
@@ -114,39 +129,51 @@ const addKPIBox = (pdf: jsPDF, label: string, value: string, x: number, y: numbe
 const addSummary = (pdf: jsPDF, data: AnalyticsData) => {
   let yPosition = 50;
   
-  pdf.setFontSize(12);
+  pdf.setFontSize(11);
   pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(BRAND_COLORS.dark[0], BRAND_COLORS.dark[1], BRAND_COLORS.dark[2]);
   
   // Resumo executivo
   pdf.text('Este relatório apresenta uma análise completa do sistema ' + COMPANY_NAME + ',', 25, yPosition);
-  yPosition += 15;
-  pdf.text('incluindo métricas de desempenho, distribuição de ativos e tendências.', 25, yPosition);
-  yPosition += 25;
-  
-  // Métricas principais
-  addMetricRow(pdf, 'Total de Lavagens', data.lavagensStats.totalLavagens.toString(), yPosition);
-  yPosition += 10;
-  addMetricRow(pdf, 'Total de Despachos', data.despachosStats.totalDespachos.toString(), yPosition);
-  yPosition += 10;
-  addMetricRow(pdf, 'Ciclos Totais', data.cycles.total.toString(), yPosition);
-  yPosition += 10;
-  addMetricRow(pdf, 'Média de Ciclos', data.cycles.average.toString(), yPosition);
+  yPosition += 12;
+  pdf.text('incluindo métricas de desempenho, distribuição de ativos e tendências operacionais.', 25, yPosition);
   yPosition += 20;
+  
+  // Métricas principais em formato de grid
+  const metrics = [
+    { label: 'Total de Lavagens', value: data.lavagensStats.totalLavagens.toString() },
+    { label: 'Total de Despachos', value: data.despachosStats.totalDespachos.toString() },
+    { label: 'Ciclos Totais', value: data.cycles.total.toString() },
+    { label: 'Média de Ciclos', value: data.cycles.average.toString() }
+  ];
+  
+  metrics.forEach((metric, index) => {
+    const x = 25 + (index % 2) * 90;
+    const y = yPosition + Math.floor(index / 2) * 35;
+    addKPIBox(pdf, metric.label, metric.value, x, y);
+  });
+  
+  yPosition += 75;
   
   // Status dos despachos
   pdf.setFont('helvetica', 'bold');
   pdf.text('Status dos Despachos:', 25, yPosition);
-  yPosition += 10;
+  yPosition += 12;
   pdf.setFont('helvetica', 'normal');
   
   const statusCount = data.despachosStats.statusCount;
-  addMetricRow(pdf, 'Pendentes', statusCount.pendente?.toString() || '0', yPosition);
-  yPosition += 8;
-  addMetricRow(pdf, 'Em Trânsito', statusCount.em_transito?.toString() || '0', yPosition);
-  yPosition += 8;
-  addMetricRow(pdf, 'Entregues', statusCount.entregue?.toString() || '0', yPosition);
-  yPosition += 8;
-  addMetricRow(pdf, 'Retornados', statusCount.retornado?.toString() || '0', yPosition);
+  const statuses = [
+    { label: 'Pendentes', value: statusCount.pendente?.toString() || '0' },
+    { label: 'Em Trânsito', value: statusCount.em_transito?.toString() || '0' },
+    { label: 'Entregues', value: statusCount.entregue?.toString() || '0' },
+    { label: 'Retornados', value: statusCount.retornado?.toString() || '0' }
+  ];
+  
+  statuses.forEach((status, index) => {
+    const x = 25 + (index % 2) * 90;
+    const y = yPosition + Math.floor(index / 2) * 10;
+    addMetricRow(pdf, status.label, status.value, y);
+  });
 };
 
 const addExecutiveSummary = (pdf: jsPDF, data: AnalyticsData, type: 'mensal' | 'anual') => {
@@ -386,19 +413,19 @@ export const pdfAnalyticsService = {
   async generateAnalyticsPDF(pdfData: PDFData): Promise<Blob> {
     const pdf = new jsPDF();
     
-    // Capa
+    // Capa profissional
     addCoverPage(pdf, 'Relatório Analytics Completo', pdfData.generatedAt);
     
     // Sumário
     pdf.addPage();
-    addHeader(pdf, 'Sumário');
+    addHeader(pdf, 'Sumário Executivo');
     addSummary(pdf, pdfData.analyticsData);
     
     // Gráficos
     if (pdfData.imageData) {
       pdf.addPage();
-      addHeader(pdf, 'Gráficos e Visualizações');
-      addImageToPDF(pdf, pdfData.imageData, 60);
+      addHeader(pdf, 'Análise Visual e Gráficos');
+      addImageToPDF(pdf, pdfData.imageData, 50);
     }
     
     // Análise Detalhada
@@ -461,10 +488,10 @@ export const pdfAnalyticsService = {
     const canvas = await html2canvas(element, {
       useCORS: true,
       allowTaint: false,
-      background: '#ffffff',
+      backgroundColor: '#ffffff',
+      scale: 2,
       logging: false
-      // Removida a opção 'scale' que causava erro
     });
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL('image/png', 1.0);
   }
 };

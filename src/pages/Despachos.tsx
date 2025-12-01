@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card'; // Removido CardHeader e CardTitle
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -11,12 +11,15 @@ import { Despacho } from '@/services/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import UpdateLocationModal from '@/components/UpdateLocationModal';
 
 const Despachos = () => {
   const [despachos, setDespachos] = useState<(Despacho & { bombona_nome: string; bombona_status: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [selectedBombona, setSelectedBombona] = useState<{id: string, name: string} | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,6 +35,11 @@ const Despachos = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOpenLocationModal = (bombona: {id: string, name: string}) => {
+    setSelectedBombona(bombona);
+    setLocationModalOpen(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -220,15 +228,22 @@ const Despachos = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/bombonas/details/${despacho.bombona_id}`)}
+                        onClick={() => handleOpenLocationModal({
+                          id: despacho.bombona_id,
+                          name: despacho.bombona_nome
+                        })}
+                        className="flex items-center gap-2"
                       >
-                        Ver Bombona
+                        <MapPin className="w-4 h-4" />
+                        Atualizar Localização
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => navigate('/mapa')}
+                        className="flex items-center gap-2"
                       >
+                        <MapPin className="w-4 h-4" />
                         Ver no Mapa
                       </Button>
                     </div>
@@ -238,6 +253,18 @@ const Despachos = () => {
             ))}
           </div>
         )}
+
+        {/* Modal de Atualização de Localização */}
+        <UpdateLocationModal
+          open={locationModalOpen}
+          onOpenChange={setLocationModalOpen}
+          bombonaId={selectedBombona?.id || ''}
+          bombonaName={selectedBombona?.name || ''}
+          onLocationUpdated={() => {
+            // Recarregue os dados se necessário
+            fetchDespachos();
+          }}
+        />
       </main>
     </div>
   );

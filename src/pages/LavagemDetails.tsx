@@ -1,11 +1,15 @@
-// src/pages/LavagemDetails.tsx
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Package, Droplet, User, Clock, Trash2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { 
+  ArrowLeft, Calendar, Package, Droplet, User, Clock, 
+  Trash2, CheckCircle, Box, Palette, Gauge, Database,
+  RefreshCw, FileText, Hash, BarChart3
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { LavagemWithBombona } from '@/services/types';
 import { lavagemService } from '@/services/lavagemService';
@@ -17,13 +21,22 @@ const LavagemDetails = () => {
   const [loading, setLoading] = useState(true);
 
   const loadLavagem = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      console.error('❌ No ID provided');
+      setLoading(false);
+      return;
+    }
     
     try {
       const lavagemData = await lavagemService.fetchLavagemById(id);
-      setLavagem(lavagemData);
+      
+      if (lavagemData) {
+        setLavagem(lavagemData);
+      } else {
+        toast.error('Lavagem não encontrada');
+      }
     } catch (error) {
-      console.error('Erro ao carregar lavagem:', error);
+      console.error('❌ Error loading lavagem:', error);
       toast.error('Erro ao carregar lavagem');
     } finally {
       setLoading(false);
@@ -33,6 +46,15 @@ const LavagemDetails = () => {
   useEffect(() => {
     loadLavagem();
   }, [loadLavagem]);
+
+  // CORREÇÃO DO BOTÃO VOLTAR
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/lavagens');
+    }
+  };
 
   const handleDelete = async () => {
     if (!lavagem) return;
@@ -49,6 +71,7 @@ const LavagemDetails = () => {
       }
     } catch (error) {
       console.error('Erro ao excluir lavagem:', error);
+      toast.error('Erro ao excluir lavagem');
     }
   };
 
@@ -76,7 +99,10 @@ const LavagemDetails = () => {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 lg:px-8 py-8">
-          <p className="text-center text-muted-foreground">Carregando...</p>
+          <div className="text-center">
+            <RefreshCw className="w-12 h-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+            <p className="text-muted-foreground">Carregando detalhes da lavagem...</p>
+          </div>
         </div>
       </div>
     );
@@ -106,15 +132,23 @@ const LavagemDetails = () => {
       <Navbar />
       
       <main className="container mx-auto px-4 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar
-          </Button>
+        {/* Cabeçalho */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            {/* BOTÃO VOLTAR CORRIGIDO */}
+            <Button 
+              variant="ghost" 
+              onClick={handleGoBack}
+              className="flex items-center gap-2 mb-4"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </Button>
+            <h1 className="text-3xl font-bold text-foreground">Detalhes da Lavagem</h1>
+            <p className="text-muted-foreground mt-2">
+              Informações completas sobre o processo de higienização da bombona
+            </p>
+          </div>
           
           <Button
             variant="destructive"
@@ -122,171 +156,266 @@ const LavagemDetails = () => {
             className="flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            Excluir Lavagem
+            Excluir
           </Button>
         </div>
 
-        {/* Header Card */}
-        <Card className="mb-6 shadow-card-eco">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="w-24 h-24 rounded-lg bg-gradient-eco flex items-center justify-center shrink-0">
-                <Droplet className="w-12 h-12 text-primary-foreground" />
-              </div>
-
-              <div className="flex-1">
-                <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-foreground mb-2">
-                      Lavagem - {lavagem.bombona_nome}
-                    </h1>
+        {/* Grid Principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Coluna Principal */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Card de Visão Geral */}
+            <Card className="shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shrink-0">
+                    <Droplet className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold mb-2">Processo de Lavagem</h2>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <Badge variant="outline" className={getMaterialColor(lavagem.bombona_material)}>
+                        <Palette className="w-3 h-3 mr-1" />
+                        {lavagem.bombona_material}
+                      </Badge>
+                      <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                        <BarChart3 className="w-3 h-3 mr-1" />
+                        Ciclo {lavagem.ciclos_depois}
+                      </Badge>
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Concluída
+                      </Badge>
+                    </div>
                     <p className="text-muted-foreground">
-                      QR Code: {lavagem.bombona_qr_code}
+                      Processo de higienização realizado em {formatDate(lavagem.data_lavagem)}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Badge variant="outline" className={getMaterialColor(lavagem.bombona_material)}>
-                      {lavagem.bombona_material}
-                    </Badge>
-                    <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-                      Ciclo {lavagem.ciclos_depois}
-                    </Badge>
-                  </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
+            {/* Sobre Esta Lavagem */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Sobre Este Processo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                    <Calendar className="w-5 h-5 text-blue-600" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Data</p>
+                      <p className="text-sm text-blue-600">Data da Lavagem</p>
                       <p className="font-semibold">{formatDate(lavagem.data_lavagem)}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-muted-foreground" />
+                  
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <RefreshCw className="w-5 h-5 text-green-600" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Capacidade</p>
-                      <p className="font-semibold">{lavagem.bombona_capacidade}L</p>
+                      <p className="text-sm text-green-600">Incremento de Ciclos</p>
+                      <p className="font-semibold">+{lavagem.ciclos_depois - lavagem.ciclos_antes}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
+
+                  <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                    <Clock className="w-5 h-5 text-purple-600" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Ciclos Antes</p>
+                      <p className="text-sm text-purple-600">Ciclos Antes</p>
                       <p className="font-semibold">{lavagem.ciclos_antes}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
+
+                  <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                    <Clock className="w-5 h-5 text-orange-600" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Ciclos Depois</p>
+                      <p className="text-sm text-orange-600">Ciclos Depois</p>
                       <p className="font-semibold">{lavagem.ciclos_depois}</p>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Detalhes da Lavagem */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Informações dos Produtos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Droplet className="w-5 h-5" />
-                Informações dos Produtos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {lavagem.produto_anterior && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Produto Anterior</p>
-                  <div className="p-3 bg-muted/20 rounded-lg border">
-                    <p className="font-semibold">{lavagem.produto_anterior}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Produto armazenado antes da lavagem
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {lavagem.produto_novo && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Produto Após Lavagem</p>
-                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                    <p className="font-semibold text-green-700">{lavagem.produto_novo}</p>
-                    <p className="text-xs text-green-600 mt-1">
-                      Produto armazenado após a lavagem
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {!lavagem.produto_anterior && !lavagem.produto_novo && (
-                <p className="text-muted-foreground text-center py-4">
-                  Nenhum produto registrado nesta lavagem
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                <Separator />
 
-          {/* Observações e Metadados */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Informações Adicionais
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {lavagem.observacoes && (
+                {/* Produtos */}
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Observações</p>
-                  <div className="p-3 bg-muted/20 rounded-lg border">
-                    <p className="text-sm">{lavagem.observacoes}</p>
+                  <h3 className="font-semibold mb-3">Histórico de Produtos</h3>
+                  <div className="space-y-3">
+                    {lavagem.produto_anterior && (
+                      <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Produto Anterior</p>
+                          <p className="font-semibold">{lavagem.produto_anterior}</p>
+                        </div>
+                        <Badge variant="outline" className="bg-gray-100">
+                          Antes da Lavagem
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    {lavagem.produto_novo && (
+                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                        <div>
+                          <p className="text-sm text-green-600">Produto Após Lavagem</p>
+                          <p className="font-semibold text-green-700">{lavagem.produto_novo}</p>
+                        </div>
+                        <Badge variant="outline" className="bg-green-100 text-green-800">
+                          Após Lavagem
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-              
-              <div className="grid grid-cols-1 gap-3">
+              </CardContent>
+            </Card>
+
+            {/* Informações da Bombona */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Informações da Bombona
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Box className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nome</p>
+                        <p className="font-semibold">{lavagem.bombona_nome}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Hash className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">QR Code</p>
+                        <p className="font-semibold font-mono">{lavagem.bombona_qr_code}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Gauge className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Capacidade</p>
+                        <p className="font-semibold">{lavagem.bombona_capacidade} Litros</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Palette className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Material</p>
+                        <Badge variant="outline" className={getMaterialColor(lavagem.bombona_material)}>
+                          {lavagem.bombona_material}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Database className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Status</p>
+                        <Badge variant="outline" className="bg-green-100 text-green-800">
+                          {lavagem.bombona_status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Observações */}
+            {lavagem.observacoes && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Observações
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted/20 p-4 rounded-lg">
+                    <p className="text-sm leading-relaxed">{lavagem.observacoes}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Ações Rápidas */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Ações</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  onClick={() => navigate(`/bombonas/details/${lavagem.bombona_id}`)}
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  Ver Bombona
+                </Button>
+                <Button 
+                  onClick={() => navigate('/lavagens')}
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Voltar para Lavagens
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Metadados */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações do Sistema</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Registrado em</p>
+                  <p className="text-muted-foreground">Registrado em</p>
                   <p className="font-semibold">{formatDate(lavagem.created_at)}</p>
                 </div>
-                
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Última atualização</p>
+                  <p className="text-muted-foreground">Última atualização</p>
                   <p className="font-semibold">{formatDate(lavagem.updated_at)}</p>
                 </div>
-                
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">ID do Registro</p>
-                  <p className="font-mono text-xs bg-muted p-2 rounded">{lavagem.id}</p>
+                  <p className="text-muted-foreground">ID do Registro</p>
+                  <p className="font-mono text-xs bg-muted p-2 rounded break-all">{lavagem.id}</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                <div>
+                  <p className="text-muted-foreground">ID da Bombona</p>
+                  <p className="font-mono text-xs bg-muted p-2 rounded break-all">{lavagem.bombona_id}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Ações */}
-        <div className="flex gap-4 mt-6">
-          <Button 
-            onClick={() => navigate(`/bombonas/details/${lavagem.bombona_id}`)}
-            className="flex-1"
-          >
-            <Package className="w-4 h-4 mr-2" />
-            Ver Bombona
-          </Button>
-          
-          <Button 
-            onClick={() => navigate('/lavagens')}
-            variant="outline"
-            className="flex-1"
-          >
-            Voltar para Lavagens
-          </Button>
+            {/* Status */}
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                  <div>
+                    <p className="font-semibold text-green-800">Processo Concluído</p>
+                    <p className="text-sm text-green-600">Lavagem realizada com sucesso</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
     </div>

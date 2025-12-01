@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Navigation } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, Navigation, ArrowLeft } from 'lucide-react';
 import { trackingService } from '@/services/trackingService';
 import { toast } from 'sonner';
 
@@ -12,9 +12,10 @@ interface LocationUpdaterProps {
   bombonaId: string;
   bombonaName: string;
   onLocationUpdated: () => void;
+  onBack: () => void;
 }
 
-const LocationUpdater = ({ bombonaId, bombonaName, onLocationUpdated }: LocationUpdaterProps) => {
+const LocationUpdater = ({ bombonaId, bombonaName, onLocationUpdated, onBack }: LocationUpdaterProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     address: '',
@@ -96,28 +97,47 @@ const LocationUpdater = ({ bombonaId, bombonaName, onLocationUpdated }: Location
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <Navigation className="w-4 h-4" />
-          Atualizar Localização - {bombonaName}
-        </h3>
+    <div className="container mx-auto p-6 max-w-2xl">
+      {/* Botão Voltar */}
+      <Button 
+        variant="ghost" 
+        onClick={onBack}
+        className="mb-4 flex items-center gap-2"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar
+      </Button>
+
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <MapPin className="w-5 h-5" />
+            Atualizar Localização - {bombonaName}
+          </CardTitle>
+        </CardHeader>
         
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="address">Endereço *</Label>
+        <CardContent className="space-y-6">
+          {/* Endereço */}
+          <div className="space-y-3">
+            <Label htmlFor="address" className="text-base font-medium">
+              Endereço *
+            </Label>
             <Input
               id="address"
               value={formData.address}
               onChange={(e) => setFormData({...formData, address: e.target.value})}
               placeholder="Endereço completo (rua, número, cidade, estado)"
+              className="w-full"
               required
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="latitude">Latitude *</Label>
+          {/* Coordenadas */}
+          <div className="grid grid-cols-1 gap-6">
+            <div className="space-y-3">
+              <Label htmlFor="latitude" className="text-base font-medium">
+                Latitude *
+              </Label>
               <Input
                 id="latitude"
                 type="number"
@@ -125,12 +145,15 @@ const LocationUpdater = ({ bombonaId, bombonaName, onLocationUpdated }: Location
                 value={formData.latitude}
                 onChange={(e) => setFormData({...formData, latitude: e.target.value})}
                 placeholder="Ex: -23.5505"
+                className="w-full"
                 required
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="longitude">Longitude *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="longitude" className="text-base font-medium">
+                Longitude *
+              </Label>
               <Input
                 id="longitude"
                 type="number"
@@ -138,47 +161,58 @@ const LocationUpdater = ({ bombonaId, bombonaName, onLocationUpdated }: Location
                 value={formData.longitude}
                 onChange={(e) => setFormData({...formData, longitude: e.target.value})}
                 placeholder="Ex: -46.6333"
+                className="w-full"
                 required
               />
             </div>
           </div>
 
+          {/* Botão Localização Atual */}
           <Button 
             type="button"
             onClick={handleUseCurrentLocation}
             variant="outline"
-            className="w-full"
+            className="w-full flex items-center gap-2 py-3"
           >
-            <MapPin className="w-4 h-4 mr-2" />
+            <Navigation className="w-4 h-4" />
             Usar Minha Localização Atual
           </Button>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações</Label>
+          {/* Observações */}
+          <div className="space-y-3">
+            <Label htmlFor="notes" className="text-base font-medium">
+              Observações
+            </Label>
             <Textarea
               id="notes"
               value={formData.notes}
               onChange={(e) => setFormData({...formData, notes: e.target.value})}
               placeholder="Observações sobre a localização (opcional)"
-              rows={2}
+              rows={3}
+              className="w-full resize-none"
             />
           </div>
 
+          {/* Botão Atualizar */}
           <Button 
             onClick={handleUpdateLocation} 
             disabled={loading}
-            className="w-full"
+            className="w-full py-3 text-base"
+            size="lg"
           >
-            <Navigation className="w-4 h-4 mr-2" />
+            <MapPin className="w-4 h-4 mr-2" />
             {loading ? 'Atualizando...' : 'Atualizar Localização'}
           </Button>
 
-          <p className="text-xs text-muted-foreground text-center">
-            * Campos obrigatórios. A localização será visível no mapa.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+          {/* Texto de ajuda */}
+          <div className="text-center pt-2">
+            <p className="text-sm text-muted-foreground">
+              * Campos obrigatórios. A localização será visível no mapa.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

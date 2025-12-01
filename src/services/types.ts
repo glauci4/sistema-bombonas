@@ -664,7 +664,26 @@ export const convertBombonaFromDB = (bombonaDB: BombonaFromDB): Bombona => {
   };
 };
 
-// ========== EXPORTAÇÕES DE TIPOS COMUNS ==========
+// ========== TIPOS PARA RASTREAMENTO ==========
+
+export interface LocationHistory {
+  id: string;
+  bombona_id: string;
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  notes: string | null;
+  recorded_at: string;
+  created_at: string;
+}
+
+export interface NewLocationHistory {
+  bombona_id: string;
+  latitude: number;
+  longitude: number;
+  address?: string | null;
+  notes?: string | null;
+}
 
 export type { 
   BombonaStatus as BombonaStatusType,

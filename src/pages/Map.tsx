@@ -3,53 +3,45 @@ import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Package, Truck } from 'lucide-react';
+import { MapPin, Package, Truck, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import InteractiveMap from '@/components/InteractiveMap';
-import { DespachoLocation } from '@/services/types';
+import { DespachoLocation, Bombona, BombonaStatus } from '@/services/types';
 import { despachoService } from '@/services/despachoService';
-
-interface BombonaLocation {
-  id: string;
-  name: string;
-  status: string;
-  location_address: string | null;
-  location_lat: number | null;
-  location_lng: number | null;
-}
+import { bombonaService } from '@/services/bombonaService';
 
 const Map = () => {
-  const [bombonas, setBombonas] = useState<BombonaLocation[]>([]);
+  const [bombonas, setBombonas] = useState<Bombona[]>([]);
   const [despachos, setDespachos] = useState<DespachoLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'bombonas' | 'despachos'>('bombonas');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchData();
+    
+    // Configurar atualização automática a cada 30 segundos
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+      setRefreshing(true);
       
-      // Buscar bombonas com localização
-      const { data: bombonasData, error: bombonasError } = await supabase
-        .from('bombonas')
-        .select('id, name, status, location_address, location_lat, location_lng')
-        .not('location_lat', 'is', null)
-        .not('location_lng', 'is', null);
-
-      if (bombonasError) throw bombonasError;
-
-      // Buscar despachos usando o serviço
+      // Buscar todas as bombonas (não apenas as com localização)
+      const bombonasData = await bombonaService.fetchBombonas();
+      
+      // Buscar despachos ativos
       const despachosData = await despachoService.getDespachosForMap();
 
-      setBombonas(bombonasData || []);
+      setBombonas(bombonasData);
       setDespachos(despachosData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -81,22 +73,39 @@ const Map = () => {
     return labels[status] || status;
   };
 
-  const currentLocations = activeTab === 'bombonas' ? bombonas : despachos;
+  // Bombonas que estão em uso (incluindo as que estão em despachos)
+  const bombonasAtivas = bombonas.filter(b => 
+    b.status === 'in_use' || b.status === 'available' // Mostrar disponíveis também
+  );
+
+  const currentLocations = activeTab === 'bombonas' ? bombonasAtivas : despachos;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="container mx-auto px-4 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Mapa de Localização</h1>
-          <p className="text-muted-foreground">Visualize a localização das bombonas e despachos em tempo real</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Mapa de Localização</h1>
+            <p className="text-muted-foreground">Visualize a localização das bombonas e despachos em tempo real</p>
+          </div>
+          
+          <Button 
+            onClick={fetchData} 
+            variant="outline" 
+            disabled={refreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <InteractiveMap 
-              locations={bombonas} 
+              bombonas={bombonasAtivas}
               despachos={despachos}
             />
           </div>
@@ -117,7 +126,7 @@ const Map = () => {
                     className="flex-1"
                   >
                     <Package className="w-4 h-4 mr-2" />
-                    Bombonas ({bombonas.length})
+                    Bombonas ({bombonasAtivas.length})
                   </Button>
                   <Button
                     variant={activeTab === 'despachos' ? 'default' : 'outline'}
@@ -145,14 +154,14 @@ const Map = () => {
                       <>
                         <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                         <p className="text-muted-foreground text-sm">
-                          Nenhuma bombona com localização cadastrada
+                          Nenhuma bombona ativa no momento
                         </p>
                       </>
                     ) : (
                       <>
                         <Truck className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                         <p className="text-muted-foreground text-sm">
-                          Nenhum despacho em trânsito
+                          Nenhum despacho em andamento
                         </p>
                       </>
                     )}
@@ -164,7 +173,7 @@ const Map = () => {
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-semibold">
-                          {'bombona_nome' in item ? item.bombona_nome : (item as BombonaLocation).name}
+                          {'bombona_nome' in item ? item.bombona_nome : (item as Bombona).name}
                         </h3>
                         <Badge variant="outline" className={getStatusColor(item.status)}>
                           {getStatusLabel(item.status)}
@@ -177,25 +186,25 @@ const Map = () => {
                         </p>
                       )}
                       
-                      {('location_address' in item && item.location_address) && (
-                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                          <span className="line-clamp-2">{item.location_address}</span>
-                        </div>
-                      )}
-                      
-                      {'endereco' in item && (
-                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                          <span className="line-clamp-2">{(item as DespachoLocation).endereco}</span>
-                        </div>
-                      )}
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span className="line-clamp-2">
+                          {('endereco' in item && item.endereco) 
+                            ? item.endereco 
+                            : (item as Bombona).location_address || 'Localização não registrada'
+                          }
+                        </span>
+                      </div>
                       
                       {'responsavel' in item && (
                         <p className="text-xs text-muted-foreground mt-2">
                           Responsável: {(item as DespachoLocation).responsavel}
                         </p>
                       )}
+
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Última atualização: {new Date().toLocaleTimeString()}
+                      </p>
                     </CardContent>
                   </Card>
                 ))
